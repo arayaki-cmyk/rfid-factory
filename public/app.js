@@ -1036,31 +1036,52 @@ function renderHistoryChart() {
   const c = document.getElementById('historyDailyChart');
   if (!c) return;
   const { from, to } = getHistoryDateRange();
-  // Generate day list
+
   const days = [];
   const start = new Date(from + 'T00:00:00');
-  const end = new Date(to + 'T00:00:00');
-  const maxDays = 60;
-  let cursor = new Date(start);
-  while (cursor <= end && days.length < maxDays) {
+  const end   = new Date(to   + 'T00:00:00');
+  let cursor  = new Date(start);
+  while (cursor <= end && days.length < 60) {
     days.push(cursor.toISOString().slice(0, 10));
     cursor.setDate(cursor.getDate() + 1);
   }
-  if (!days.length) { c.innerHTML = `<div class="empty-state"><i class="fas fa-chart-bar"></i><p>${T('hist_chart_empty')}</p></div>`; return; }
+
+  if (!days.length) {
+    c.innerHTML = `<div class="empty-state"><i class="fas fa-chart-bar"></i><p>${T('hist_chart_empty')}</p></div>`;
+    return;
+  }
 
   const data = days.map(day => {
-    const outQty = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
-    const inQty = transactions.filter(t => t.type === 'in' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
+    const outQty = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + Number(t.qty || 0), 0);
+    const inQty  = transactions.filter(t => t.type === 'in'  && t.time && t.time.startsWith(day)).reduce((s, t) => s + Number(t.qty || 0), 0);
     return { day: day.slice(5), outQty, inQty };
   });
+
   const max = Math.max(...data.map(d => Math.max(d.outQty, d.inQty)), 1);
-  c.innerHTML = data.map(d => `<div class="hc-day-group">
-    <div class="hc-day-label">${d.day}</div>
-    <div class="hc-bars">
-      <div class="hc-bar hc-bar-out" style="height:${d.outQty / max * 100}%" title="${T('tx_type_out')} ${d.outQty}"><span>${d.outQty || ''}</span></div>
-      <div class="hc-bar hc-bar-in" style="height:${d.inQty / max * 100}%" title="${T('tx_type_in')} ${d.inQty}"><span>${d.inQty || ''}</span></div>
+  const BAR_H = 140; // px — matches CSS .hc-bars height
+
+  const bars = data.map(d => {
+    const outH = Math.max(Math.round(d.outQty / max * BAR_H), d.outQty > 0 ? 4 : 0);
+    const inH  = Math.max(Math.round(d.inQty  / max * BAR_H), d.inQty  > 0 ? 4 : 0);
+    return `<div class="hc-day-group">
+      <div class="hc-bars">
+        <div class="hc-bar hc-bar-out" style="height:${outH}px" title="เบิกออก: ${d.outQty}"><span>${d.outQty || ''}</span></div>
+        <div class="hc-bar hc-bar-in"  style="height:${inH}px"  title="รับเข้า: ${d.inQty}"><span>${d.inQty  || ''}</span></div>
+      </div>
+      <div class="hc-day-label">${d.day}</div>
+    </div>`;
+  }).join('');
+
+  c.innerHTML = `
+    <div class="hc-legend">
+      <span class="hc-legend-out">${T('hist_legend_out') || 'เบิกออก'}</span>
+      <span class="hc-legend-in">${T('hist_legend_in') || 'รับเข้า'}</span>
     </div>
-  </div>`).join('') + `<div class="hc-legend"><span class="hc-legend-out">${T('hist_legend_out')}</span><span class="hc-legend-in">${T('hist_legend_in')}</span></div>`;
+    <div class="hc-scroll-wrap">
+      <div style="display:flex;align-items:flex-end;gap:8px;min-width:fit-content;padding:4px 4px 0;">
+        ${bars}
+      </div>
+    </div>`;
 }
 
 function renderHistoryTable() {
