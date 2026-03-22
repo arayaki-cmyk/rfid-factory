@@ -172,7 +172,7 @@ const dao = {
     const users = await readAll('users');
     return users.find(u =>
       u.username?.toLowerCase() === username?.toLowerCase() &&
-      u.password === password &&
+      String(u.password) === String(password) &&
       u.active !== false
     ) || null;
   },
