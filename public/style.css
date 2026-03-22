@@ -1066,3 +1066,172 @@ a { color: var(--accent-cyan); cursor: pointer; text-decoration: none; }
   background: var(--bg-surface); padding: 3px 10px;
   border-radius: 20px; border: 1px solid var(--border-color);
 }
+
+/* ===== HISTORY CHART — BAR CHART ===== */
+#historyDailyChart {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+/* Chart wrapper — bars grow upward */
+#historyDailyChart > .hc-day-group {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+}
+
+/* Outer scrollable flex container for all day groups */
+#historyDailyChart {
+  display: flex;
+  flex-direction: column;
+}
+
+#historyDailyChart .hc-chart-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 180px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  padding: 0 4px 4px;
+}
+
+.hc-day-group {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.hc-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+}
+
+.hc-bar {
+  width: 14px;
+  border-radius: 4px 4px 0 0;
+  transition: height .6s cubic-bezier(.34,1.2,.64,1), filter .15s;
+  min-height: 3px;
+  cursor: pointer;
+  position: relative;
+}
+.hc-bar:hover { filter: brightness(1.15); }
+.hc-bar span {
+  position: absolute;
+  top: -18px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px; font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .15s;
+  pointer-events: none;
+}
+.hc-bar:hover span { opacity: 1; }
+
+.hc-bar-out {
+  background: linear-gradient(180deg, #EF4444 0%, #FCA5A5 100%);
+  box-shadow: 0 -2px 6px rgba(239,68,68,.25);
+}
+.hc-bar-in {
+  background: linear-gradient(180deg, #10B981 0%, #6EE7B7 100%);
+  box-shadow: 0 -2px 6px rgba(16,185,129,.25);
+}
+
+.hc-day-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  margin-top: 4px;
+  writing-mode: initial;
+}
+
+/* Legend */
+.hc-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+.hc-legend-out, .hc-legend-in {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hc-legend-out::before {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #EF4444, #FCA5A5);
+}
+.hc-legend-in::before {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #10B981, #6EE7B7);
+}
+.hc-legend-out { color: #DC2626; }
+.hc-legend-in  { color: #059669; }
+[data-theme="dark"] .hc-legend-out { color: #F87171; }
+[data-theme="dark"] .hc-legend-in  { color: #34D399; }
+
+/* Chart scroll container */
+.hc-scroll-wrap {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.hc-scroll-wrap::-webkit-scrollbar { height: 4px; }
+.hc-scroll-wrap::-webkit-scrollbar-thumb { background: rgba(124,58,237,.20); border-radius: 4px; }
+
+/* ===== HISTORY SUMMARY CARDS ===== */
+.history-summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all .22s;
+  position: relative;
+  overflow: hidden;
+}
+.history-summary-card::after {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: var(--card-accent, var(--gradient-primary));
+  border-radius: 3px 3px 0 0;
+}
+.history-summary-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.hsc-icon {
+  width: 46px; height: 46px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.hsc-info h4 {
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px;
+}
+.hsc-value {
+  font-size: 26px; font-weight: 800; letter-spacing: -.5px; line-height: 1;
+}
+.hsc-top {
+  font-size: 14px !important;
+  letter-spacing: 0 !important;
+  font-weight: 700 !important;
+  color: var(--accent-amber);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 160px;
+}
