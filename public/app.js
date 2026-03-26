@@ -194,6 +194,7 @@ function refreshCurrentView() {
     dashboard: renderDashboard, products: renderProducts,
     withdraw: renderWithdraw, receive: renderReceive, transactions: renderTransactions,
     userLog: renderUserLog, userManagement: renderUserMgmt, history: renderHistory, analytics: renderAnalytics,
+    aiRestock: renderAiRestock,
   };
   if (renderers[currentPage]) renderers[currentPage]();
 }
@@ -295,6 +296,7 @@ function navigateTo(page) {
     history: ['page_history', 'page_history_bread'],
     analytics: ['page_analytics', 'page_analytics_bread'],
     userLog: ['page_userlog', 'page_userlog_bread'], userManagement: ['page_usermgmt', 'page_usermgmt_bread'],
+    aiRestock: ['AI Restock Prediction', 'หน้าหลัก / AI Restock'],
   };
   const [tKey, bKey] = titles[page] || [page, page];
   document.getElementById('pageTitle').textContent = T(tKey);
@@ -307,6 +309,7 @@ function navigateTo(page) {
     dashboard: renderDashboard, products: renderProducts,
     withdraw: renderWithdraw, receive: renderReceive, transactions: renderTransactions,
     userLog: renderUserLog, userManagement: renderUserMgmt, history: renderHistory, analytics: renderAnalytics,
+    aiRestock: renderAiRestock,
   };
   if (renderers[page]) renderers[page]();
   updateTxBadge();
@@ -1321,3 +1324,272 @@ function renderAnalyticsHourly() {
 function getNow() { const d = new Date(); return `${d.getFullYear()}-${S(d.getMonth() + 1)}-${S(d.getDate())} ${S(d.getHours())}:${S(d.getMinutes())}:${S(d.getSeconds())}`; }
 function S(n) { return String(n).padStart(2, '0'); }
 function fmtTime(str) { if (!str) return '-'; try { const [date, time] = str.split(' '); const [y, m, d] = date.split('-'); return `${d}/${m} ${time ? time.slice(0, 5) : ''}`; } catch { return str; } }
+
+// =====================================================
+// AI RESTOCK PREDICTION
+// =====================================================
+
+async function runAiRestock() {
+  const btn = document.getElementById('aiAnalyzeBtn');
+  const emptyEl   = document.getElementById('aiRestockEmpty');
+  const loadingEl = document.getElementById('aiRestockLoading');
+  const resultsEl = document.getElementById('aiRestockResults');
+  const stepsEl   = document.getElementById('aiLoadingSteps');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังวิเคราะห์...';
+  emptyEl.style.display   = 'none';
+  resultsEl.style.display = 'none';
+  loadingEl.style.display = 'flex';
+
+  const steps = [
+    { icon: 'fa-database',    text: 'โหลดข้อมูลสต็อกและ transaction' },
+    { icon: 'fa-chart-line',  text: 'วิเคราะห์ pattern การเบิก 30 วัน' },
+    { icon: 'fa-robot',       text: 'ส่งข้อมูลให้ Claude AI วิเคราะห์' },
+    { icon: 'fa-lightbulb',   text: 'สร้างคำแนะนำ restock' },
+  ];
+
+  stepsEl.innerHTML = steps.map((s,i) =>
+    `<div class="ai-step" id="aiStep${i}"><i class="fas ${s.icon}"></i>${s.text}</div>`
+  ).join('');
+
+  // Helper to animate steps
+  const activateStep = (i) => {
+    document.getElementById(`aiStep${i}`)?.classList.add('active');
+  };
+  const doneStep = (i) => {
+    const el = document.getElementById(`aiStep${i}`);
+    if (el) { el.classList.remove('active'); el.classList.add('done'); el.querySelector('i').className = 'fas fa-check-circle'; }
+  };
+
+  try {
+    activateStep(0);
+    await sleep(400);
+
+    // Build summary data for each product
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now - 30 * 86400000);
+    const recentTx = transactions.filter(t => t.time && new Date(t.time) >= thirtyDaysAgo);
+
+    doneStep(0); activateStep(1);
+    await sleep(300);
+
+    // Per-product stats
+    const productStats = products.map(p => {
+      const outTx = recentTx.filter(t => t.type === 'out' && (t.sku === p.sku || t.product === p.name));
+      const inTx  = recentTx.filter(t => t.type === 'in'  && (t.sku === p.sku || t.product === p.name));
+      const totalOut = outTx.reduce((s,t) => s + Number(t.qty||0), 0);
+      const totalIn  = inTx.reduce( (s,t) => s + Number(t.qty||0), 0);
+      const txDays   = [...new Set(outTx.map(t => t.time?.slice(0,10)))].length;
+      const avgPerDay= txDays > 0 ? (totalOut / txDays).toFixed(1) : 0;
+      const daysLeft = avgPerDay > 0 ? Math.floor(p.quantity / avgPerDay) : 999;
+      return { ...p, totalOut, totalIn, avgPerDay: Number(avgPerDay), daysLeft, txCount: outTx.length };
+    }).sort((a,b) => a.daysLeft - b.daysLeft);
+
+    doneStep(1); activateStep(2);
+
+    // Build prompt for Claude
+    const lowItems  = productStats.filter(p => p.quantity <= p.minStock);
+    const riskItems = productStats.filter(p => p.daysLeft < 14 && p.daysLeft < 999 && p.quantity > p.minStock);
+    const topItems  = productStats.filter(p => p.totalOut > 0).slice(0, 10);
+
+    const prompt = `คุณคือผู้เชี่ยวชาญด้านการจัดการคลังสินค้าโรงงาน วิเคราะห์ข้อมูลต่อไปนี้และให้คำแนะนำ restock:
+
+**สินค้าที่ต่ำกว่าขั้นต่ำ (${lowItems.length} รายการ):**
+${lowItems.slice(0,8).map(p => `- ${p.name} (${p.sku}): คงเหลือ ${p.quantity} ${p.unit}, ขั้นต่ำ ${p.minStock}, เบิก 30 วัน: ${p.totalOut}`).join('\n') || 'ไม่มี'}
+
+**สินค้าที่มีแนวโน้มจะหมดใน 14 วัน (${riskItems.length} รายการ):**
+${riskItems.slice(0,8).map(p => `- ${p.name}: คงเหลือ ${p.quantity}, เบิก/วัน ~${p.avgPerDay}, คาดว่าจะหมดใน ${p.daysLeft} วัน`).join('\n') || 'ไม่มี'}
+
+**สินค้าที่ถูกเบิกบ่อยที่สุด 30 วันที่ผ่านมา:**
+${topItems.map(p => `- ${p.name}: ${p.totalOut} ${p.unit} (${p.txCount} ครั้ง)`).join('\n') || 'ยังไม่มีข้อมูล'}
+
+**สถิติรวม:**
+- สินค้าทั้งหมด: ${products.length} รายการ
+- Transaction 30 วัน: ${recentTx.length} รายการ
+- เบิกออกรวม: ${recentTx.filter(t=>t.type==='out').reduce((s,t)=>s+Number(t.qty||0),0)} ชิ้น
+
+กรุณาให้คำแนะนำเป็นภาษาไทย สั้นกระชับ 3-5 ย่อหน้า วิเคราะห์สถานการณ์ ความเสี่ยง และแนะนำแผนการ restock ที่เหมาะสม`;
+
+    // Call Claude API
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    doneStep(2); activateStep(3);
+
+    const data = await response.json();
+    const analysisText = data.content?.[0]?.text || 'ไม่สามารถวิเคราะห์ได้ในขณะนี้';
+
+    await sleep(300);
+    doneStep(3);
+    await sleep(400);
+
+    // Render results
+    loadingEl.style.display  = 'none';
+    resultsEl.style.display  = 'block';
+
+    renderAiSummary(productStats, lowItems, riskItems);
+    renderAiRecommendations(productStats, lowItems, riskItems);
+    renderAiAnalysisText(analysisText);
+    renderAiTrendChart(productStats);
+
+    document.getElementById('aiLastUpdated').textContent = `อัปเดตเมื่อ ${new Date().toLocaleTimeString('th-TH')}`;
+
+    // Show badge if there are urgent items
+    const alertBadge = document.getElementById('aiAlertBadge');
+    if (alertBadge && lowItems.length > 0) {
+      alertBadge.style.display = 'inline';
+      alertBadge.textContent = lowItems.length;
+    }
+
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    emptyEl.style.display   = 'flex';
+    emptyEl.querySelector('.ai-empty-title').textContent = 'เกิดข้อผิดพลาด';
+    emptyEl.querySelector('.ai-empty-desc').textContent  = err.message || 'ไม่สามารถเชื่อมต่อ Claude API ได้';
+    showToast('ไม่สามารถวิเคราะห์ได้: ' + (err.message || 'API Error'), 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-sparkles"></i> วิเคราะห์ใหม่ <div class="btn-shine"></div>';
+}
+
+function renderAiSummary(stats, lowItems, riskItems) {
+  const el = document.getElementById('aiSummaryGrid');
+  if (!el) return;
+  const totalOut30 = stats.reduce((s,p) => s + p.totalOut, 0);
+  const urgentCount = lowItems.length;
+  const riskCount   = riskItems.length;
+  const healthyCount = stats.filter(p => p.daysLeft >= 30 || p.daysLeft === 999).length;
+
+  el.innerHTML = `
+    <div class="ai-sum-card" style="--card-accent:var(--g-danger)">
+      <div class="ai-sum-icon">🚨</div>
+      <div class="ai-sum-label">ต่ำกว่าขั้นต่ำ</div>
+      <div class="ai-sum-value" style="color:var(--accent-red)">${urgentCount}</div>
+      <div class="ai-sum-sub">รายการที่ต้องสั่งทันที</div>
+    </div>
+    <div class="ai-sum-card" style="--card-accent:var(--g-amber)">
+      <div class="ai-sum-icon">⚠️</div>
+      <div class="ai-sum-label">ใกล้หมดใน 14 วัน</div>
+      <div class="ai-sum-value" style="color:var(--accent-amber)">${riskCount}</div>
+      <div class="ai-sum-sub">รายการควรวางแผนสั่ง</div>
+    </div>
+    <div class="ai-sum-card" style="--card-accent:var(--g-success)">
+      <div class="ai-sum-icon">✅</div>
+      <div class="ai-sum-label">สต็อกปลอดภัย</div>
+      <div class="ai-sum-value" style="color:var(--accent-green)">${healthyCount}</div>
+      <div class="ai-sum-sub">รายการที่มีสต็อก > 30 วัน</div>
+    </div>
+    <div class="ai-sum-card" style="--card-accent:var(--g-primary)">
+      <div class="ai-sum-icon">📦</div>
+      <div class="ai-sum-label">เบิกออกรวม 30 วัน</div>
+      <div class="ai-sum-value" style="color:var(--accent-cyan)">${totalOut30.toLocaleString()}</div>
+      <div class="ai-sum-sub">ชิ้นจากทุกรายการ</div>
+    </div>`;
+}
+
+function renderAiRecommendations(stats, lowItems, riskItems) {
+  const el = document.getElementById('aiRecommendList');
+  if (!el) return;
+
+  const all = [
+    ...lowItems.map(p => ({ ...p, urgency: 'high', reason: `ต่ำกว่าขั้นต่ำ (${p.minStock})`, suggestQty: Math.max(p.minStock * 3 - p.quantity, p.minStock) })),
+    ...riskItems.map(p => ({ ...p, urgency: 'medium', reason: `หมดใน ~${p.daysLeft} วัน`, suggestQty: Math.ceil(p.avgPerDay * 30) })),
+  ];
+
+  if (!all.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:32px"><i class="fas fa-check-circle" style="color:var(--accent-green);opacity:1;"></i><p>สต็อกทุกรายการอยู่ในระดับปลอดภัย 👍</p></div>`;
+    return;
+  }
+
+  el.innerHTML = all.map(p => `
+    <div class="ai-rec-item">
+      <div class="ai-rec-urgency ${p.urgency}"></div>
+      <div class="ai-rec-info">
+        <div class="ai-rec-name">${p.name}</div>
+        <div class="ai-rec-meta">
+          <span>คงเหลือ: <strong>${p.quantity}</strong> ${p.unit}</span>
+          <span>เบิก/วัน: ~${p.avgPerDay}</span>
+          <span>${p.reason}</span>
+        </div>
+      </div>
+      <div class="ai-urgency-badge ${p.urgency}">
+        ${p.urgency === 'high' ? '🚨 ด่วนมาก' : '⚠️ ควรสั่ง'}
+      </div>
+      <div class="ai-rec-qty">
+        <div class="ai-rec-qty-num">+${p.suggestQty}</div>
+        <div class="ai-rec-qty-unit">${p.unit}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAiAnalysisText(text) {
+  const el = document.getElementById('aiAnalysisText');
+  if (!el) return;
+  el.classList.remove('done');
+  el.textContent = '';
+
+  // Typewriter effect
+  let i = 0;
+  const speed = Math.max(8, Math.floor(5000 / text.length));
+  const timer = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      el.scrollTop = el.scrollHeight;
+    } else {
+      clearInterval(timer);
+      el.classList.add('done');
+    }
+  }, speed);
+}
+
+function renderAiTrendChart(stats) {
+  const el = document.getElementById('aiTrendChart');
+  if (!el) return;
+
+  const top5 = stats.filter(p => p.totalOut > 0).slice(0, 5);
+  if (!top5.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>ยังไม่มีข้อมูลการเบิก</p></div>'; return; }
+
+  // Build last 14 days data per product
+  const days = [];
+  for (let d = 13; d >= 0; d--) {
+    const dt = new Date(Date.now() - d * 86400000);
+    days.push(dt.toISOString().slice(0, 10));
+  }
+
+  const maxOut = Math.max(...top5.map(p => {
+    return Math.max(...days.map(day =>
+      transactions.filter(t => t.type === 'out' && t.time?.startsWith(day) && (t.sku === p.sku || t.product === p.name))
+        .reduce((s,t) => s + Number(t.qty||0), 0)
+    ));
+  }), 1);
+
+  el.innerHTML = `<div class="ai-trend-inner">${top5.map(p => {
+    const dayData = days.map(day =>
+      transactions.filter(t => t.type==='out' && t.time?.startsWith(day) && (t.sku===p.sku||t.product===p.name))
+        .reduce((s,t)=>s+Number(t.qty||0), 0)
+    );
+    const barH = dayData.map(v => Math.max(Math.round(v / maxOut * 100), v > 0 ? 6 : 0));
+    return `<div class="ai-trend-row">
+      <div class="ai-trend-label" title="${p.name}">${p.name}</div>
+      <div class="ai-trend-bars">
+        ${barH.map((h,i) => `<div class="ai-trend-bar" style="height:${h}%" title="${days[i].slice(5)}: ${dayData[i]}"></div>`).join('')}
+      </div>
+      <div class="ai-trend-total">${p.totalOut}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderAiRestock() {
+  // Just show the page — user clicks analyze button manually
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
