@@ -107,14 +107,24 @@ async function readAll(sheetName, sheetsClient) {
   const [headerRow, ...dataRows] = res.data.values || [[]];
   if (!headerRow || dataRows.length === 0) return [];
   return dataRows.map(row =>
-    Object.fromEntries(headerRow.map((key, i) => [key, parseVal(row[i])]))
+    Object.fromEntries(headerRow.map((key, i) => [key, parseVal(row[i], key)]))
   );
 }
 
-function parseVal(v) {
+
+// Fields that must always stay as strings — never coerce to number
+// e.g. rfid '0003182354' must NOT become number 3182354
+const STRING_FIELDS = new Set([
+  'rfid', 'sku', 'username', 'password', 'time', 'updatedAt', 'reason',
+  'detail', 'action', 'location', 'unit', 'category', 'name', 'type',
+  'date', 'data', 'dept', 'role', 'user', 'product',
+]);
+
+function parseVal(v, fieldName) {
   if (v === undefined || v === '') return '';
   if (v === 'true') return true;
   if (v === 'false') return false;
+  if (fieldName && STRING_FIELDS.has(fieldName)) return String(v);
   const n = Number(v);
   return isNaN(n) || v === '' ? v : n;
 }
