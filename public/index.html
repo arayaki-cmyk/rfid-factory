@@ -11,6 +11,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="lang.js"></script>
+  <style>
+    /* Hide app layout completely when not authenticated */
+    #appLayout:not(.active) { display: none !important; }
+  </style>
 </head>
 
 <body>
@@ -754,56 +758,91 @@
 
       <!-- ===== AI RESTOCK PREDICTION ===== -->
       <div class="page-content page-view" id="aiRestockView">
-        <!-- Header bar -->
-        <div class="ai-restock-header">
-          <div class="ai-header-left">
-            <div class="ai-icon-wrap"><i class="fas fa-robot"></i></div>
-            <div>
-              <div class="ai-title">AI Restock Prediction</div>
-              <div class="ai-subtitle">วิเคราะห์ pattern การเบิกสินค้าและแนะนำการ restock ด้วย Claude AI</div>
+
+        <!-- Hero header -->
+        <div class="ai-hero">
+          <div class="ai-hero-bg"></div>
+          <div class="ai-hero-content">
+            <div class="ai-hero-left">
+              <div class="ai-hero-icon">
+                <i class="fas fa-robot"></i>
+                <div class="ai-hero-ring"></div>
+                <div class="ai-hero-ring r2"></div>
+              </div>
+              <div class="ai-hero-text">
+                <h2 class="ai-hero-title">AI Restock Prediction</h2>
+                <p class="ai-hero-sub">Claude AI วิเคราะห์ pattern การเบิกสินค้า และแนะนำแผน restock ที่เหมาะสม</p>
+                <div class="ai-hero-tags">
+                  <span class="ai-tag"><i class="fas fa-chart-line"></i> Pattern Analysis</span>
+                  <span class="ai-tag"><i class="fas fa-brain"></i> Claude AI</span>
+                  <span class="ai-tag"><i class="fas fa-boxes-stacked"></i> Inventory Insight</span>
+                </div>
+              </div>
             </div>
+            <button class="btn btn-primary ai-analyze-btn" id="aiAnalyzeBtn" onclick="runAiRestock()">
+              <i class="fas fa-sparkles"></i>
+              <span>วิเคราะห์ตอนนี้</span>
+              <div class="btn-shine"></div>
+            </button>
           </div>
-          <button class="btn btn-primary" id="aiAnalyzeBtn" onclick="runAiRestock()">
-            <i class="fas fa-sparkles"></i> วิเคราะห์ตอนนี้
-            <div class="btn-shine"></div>
-          </button>
         </div>
 
-        <!-- Status / empty state -->
-        <div id="aiRestockEmpty" class="ai-empty-state">
-          <div class="ai-empty-icon">
-            <i class="fas fa-robot"></i>
-            <div class="ai-pulse-ring"></div>
-            <div class="ai-pulse-ring r2"></div>
+        <!-- Empty state (default) -->
+        <div id="aiRestockEmpty" class="ai-idle-card">
+          <div class="ai-idle-grid">
+            <div class="ai-idle-step">
+              <div class="ai-idle-icon-wrap" style="background:rgba(124,58,237,.10);color:var(--p600);">
+                <i class="fas fa-database"></i>
+              </div>
+              <div class="ai-idle-step-title">รวบรวมข้อมูล</div>
+              <div class="ai-idle-step-desc">ดึงข้อมูลสต็อกและประวัติการเบิก 30 วัน</div>
+            </div>
+            <div class="ai-idle-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="ai-idle-step">
+              <div class="ai-idle-icon-wrap" style="background:rgba(99,102,241,.10);color:var(--accent-indigo);">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="ai-idle-step-title">วิเคราะห์ Pattern</div>
+              <div class="ai-idle-step-desc">คำนวณ trend และคาดการณ์ระยะเวลาสต็อก</div>
+            </div>
+            <div class="ai-idle-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="ai-idle-step">
+              <div class="ai-idle-icon-wrap" style="background:rgba(16,185,129,.10);color:var(--accent-green);">
+                <i class="fas fa-lightbulb"></i>
+              </div>
+              <div class="ai-idle-step-title">แนะนำ Restock</div>
+              <div class="ai-idle-step-desc">รับคำแนะนำที่แม่นยำจาก Claude AI</div>
+            </div>
           </div>
-          <div class="ai-empty-title">พร้อมวิเคราะห์</div>
-          <div class="ai-empty-desc">กด "วิเคราะห์ตอนนี้" เพื่อให้ Claude AI ดูข้อมูลสต็อกและ<br>pattern การเบิกสินค้าของคุณ แล้วแนะนำแผนการ restock</div>
+          <p class="ai-idle-hint">กด <strong>วิเคราะห์ตอนนี้</strong> เพื่อเริ่มต้น</p>
         </div>
 
         <!-- Loading state -->
-        <div id="aiRestockLoading" style="display:none;" class="ai-loading-state">
-          <div class="ai-loading-orb"></div>
-          <div class="ai-loading-text">Claude กำลังวิเคราะห์ข้อมูล<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>
-          <div class="ai-loading-steps" id="aiLoadingSteps"></div>
+        <div id="aiRestockLoading" style="display:none;">
+          <div class="ai-loading-card">
+            <div class="ai-loading-orb">
+              <div class="ai-orb-inner"><i class="fas fa-robot"></i></div>
+            </div>
+            <div class="ai-loading-title">Claude กำลังวิเคราะห์<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>
+            <div class="ai-loading-steps" id="aiLoadingSteps"></div>
+          </div>
         </div>
 
         <!-- Results -->
         <div id="aiRestockResults" style="display:none;">
-          <!-- Summary cards -->
+
+          <!-- Summary KPI cards -->
           <div class="ai-summary-grid" id="aiSummaryGrid"></div>
 
-          <!-- Main content: recommendations + chart -->
+          <!-- Recommendations + Analysis -->
           <div class="ai-main-grid">
-            <!-- Recommendations list -->
             <div class="panel">
               <div class="panel-header">
                 <h3><i class="fas fa-list-check text-cyan"></i> รายการแนะนำ Restock</h3>
                 <div class="ai-last-updated" id="aiLastUpdated"></div>
               </div>
-              <div class="panel-body" style="padding:0;" id="aiRecommendList"></div>
+              <div id="aiRecommendList" style="padding:0;"></div>
             </div>
-
-            <!-- AI Analysis text -->
             <div class="panel">
               <div class="panel-header">
                 <h3><i class="fas fa-brain text-purple"></i> การวิเคราะห์จาก Claude</h3>
@@ -814,15 +853,16 @@
             </div>
           </div>
 
-          <!-- Trend chart per product -->
+          <!-- Trend chart -->
           <div class="panel mt-4">
             <div class="panel-header">
-              <h3><i class="fas fa-chart-line text-amber"></i> Trend การเบิก 30 วัน (Top สินค้า)</h3>
+              <h3><i class="fas fa-chart-line text-amber"></i> Trend การเบิก 14 วัน (Top 5 สินค้า)</h3>
             </div>
             <div class="panel-body">
               <div id="aiTrendChart" class="ai-trend-chart"></div>
             </div>
           </div>
+
         </div>
       </div>
 
