@@ -233,8 +233,8 @@ function logout() {
   currentPage = 'dashboard';
   // Stop auto-refresh
   if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
-  document.getElementById('appLayout').classList.remove('active');
   showPage('loginPage');
+  document.getElementById('appLayout').classList.remove('active');
   // Reset login form
   document.getElementById('loginForm').reset();
   const errEl = document.getElementById('loginError');
@@ -268,7 +268,7 @@ function applyRoles() {
 function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(async () => {
-    await loadDataMerge(); // Fetch & merge to avoid losing in-memory data
+    await loadData(); // Fetch fresh data from server
     if (currentPage === 'dashboard') {
       renderDashboard();
     }
@@ -277,51 +277,11 @@ function startAutoRefresh() {
   }, 30000); // every 30 seconds
 }
 
-// Merge server data into local arrays without discarding locally-added items
-// that may not yet be persisted (race condition window)
-async function loadDataMerge() {
-  try {
-    const [p, tx, u, logs, snaps] = await Promise.all([
-      api('GET', '/products'), api('GET', '/transactions'),
-      api('GET', '/users'), api('GET', '/logs'), api('GET', '/snapshots'),
-    ]);
-
-    // Products & users — server is authoritative, replace fully
-    products = p;
-    users = u;
-    userLog = logs;
-    stockSnapshots = snaps.flatMap(s => (s.data || []).map(d => ({ ...d, date: s.date })));
-
-    // Transactions — merge: keep local items not yet on server (by id)
-    const serverIds = new Set(tx.map(t => t.id));
-    const localOnly = transactions.filter(t => !serverIds.has(t.id));
-    // Combine server list + any local-only items, keep sorted desc by id
-    transactions = [...tx, ...localOnly].sort((a, b) => b.id - a.id);
-
-    migrateLegacyCategoryKeys();
-    recalcNextIds();
-  } catch (e) {
-    console.warn('Auto-refresh failed:', e.message);
-  }
-}
-
 // ===== NAV =====
 function showPage(id) {
-  // Toggle login page visibility
-  const loginPage = document.getElementById('loginPage');
-  const appLayout = document.getElementById('appLayout');
-  if (id === 'loginPage') {
-    if (loginPage) loginPage.classList.add('active');
-    if (appLayout) appLayout.classList.remove('active');
-  } else if (id === 'appLayout') {
-    if (loginPage) loginPage.classList.remove('active');
-    if (appLayout) appLayout.classList.add('active');
-  } else {
-    // Generic fallback for other page-views
-    document.querySelectorAll('body > .page-view').forEach(p => p.classList.remove('active'));
-    const el = document.getElementById(id);
-    if (el) el.classList.add('active');
-  }
+  document.querySelectorAll('body > .page-view').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
 }
 function navigateTo(page) {
   currentPage = page;
@@ -467,7 +427,11 @@ function showRfidPopup(uid) {
   popup.classList.add('show');
   setTimeout(() => popup.classList.remove('show'), 3000);
 }
-function findByRfid(rfid) { return products.find(p => p.rfid === rfid); }
+function findByRfid(rfid) {
+  // Compare as strings to handle RFID like '0003182354' which db may load as number
+  const uid = String(rfid).trim();
+  return products.find(p => String(p.rfid).trim() === uid);
+}
 
 // ===== CONVEYOR BELT ANIMATION =====
 function animateConveyor(uid) {
@@ -862,7 +826,7 @@ async function addProductFromWarehouse() {
     quantity: parseInt(document.getElementById('whNewQuantity').value) || 0, minStock: parseInt(document.getElementById('whNewMinStock').value) || 0
   };
   if (!d.rfid || !d.sku || !d.name || !d.category || !d.unit || !d.quantity) { showToast('error', T('msg_fill_all')); return; }
-  if (products.find(p => p.rfid === d.rfid)) { showToast('error', T('msg_rfid_dup')); return; }
+  if (products.find(p => String(p.rfid).trim() === String(d.rfid).trim())) { showToast('error', T('msg_rfid_dup')); return; }
   try {
     const now = getNow();
     const prodResult = await api('POST', '/products', { ...d, updatedAt: now });
