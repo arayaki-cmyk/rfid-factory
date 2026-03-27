@@ -13,6 +13,18 @@ if (!SPREADSHEET_ID || !GOOGLE_CREDENTIALS) {
 
 let _sheets = null;
 
+// ─── Write Queue ──────────────────────────────────────────
+// Google Sheets cannot handle concurrent writes safely.
+// Queue all write operations so they run one at a time.
+let _writeQueue = Promise.resolve();
+function queueWrite(fn) {
+  _writeQueue = _writeQueue.then(fn).catch(err => {
+    console.error('Write queue error:', err.message);
+  });
+  return _writeQueue;
+}
+// ──────────────────────────────────────────────────────────
+
 async function getSheets() {
   if (_sheets) return _sheets;
   const credentials = JSON.parse(GOOGLE_CREDENTIALS);
@@ -129,35 +141,39 @@ function parseVal(v, fieldName) {
   return isNaN(n) || v === '' ? v : n;
 }
 
-// Append a new row
-async function appendRow(sheetName, headers, obj) {
-  const s = await getSheets();
-  const row = headers.map(h => (obj[h] !== undefined ? obj[h] : ''));
-  await s.spreadsheets.values.append({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${sheetName}!A2`,
-    valueInputOption: 'RAW',
-    requestBody: { values: [row] },
-  });
-}
-
-// Overwrite all data rows
-async function writeAll(sheetName, headers, data) {
-  const s = await getSheets();
-  const rows = data.map(obj => headers.map(h => (obj[h] !== undefined ? obj[h] : '')));
-  // Clear old data rows (keep header)
-  await s.spreadsheets.values.clear({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${sheetName}!A2:Z`,
-  });
-  if (rows.length > 0) {
-    await s.spreadsheets.values.update({
+// Append a new row (queued)
+function appendRow(sheetName, headers, obj) {
+  return queueWrite(async () => {
+    const s = await getSheets();
+    const row = headers.map(h => (obj[h] !== undefined ? obj[h] : ''));
+    await s.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: `${sheetName}!A2`,
       valueInputOption: 'RAW',
-      requestBody: { values: rows },
+      requestBody: { values: [row] },
     });
-  }
+  });
+}
+
+// Overwrite all data rows (queued — prevents concurrent writes)
+function writeAll(sheetName, headers, data) {
+  return queueWrite(async () => {
+    const s = await getSheets();
+    const rows = data.map(obj => headers.map(h => (obj[h] !== undefined ? obj[h] : '')));
+    // Clear then rewrite atomically within the queue
+    await s.spreadsheets.values.clear({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${sheetName}!A2:Z`,
+    });
+    if (rows.length > 0) {
+      await s.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${sheetName}!A2`,
+        valueInputOption: 'RAW',
+        requestBody: { values: rows },
+      });
+    }
+  });
 }
 
 async function nextId(sheetName) {
