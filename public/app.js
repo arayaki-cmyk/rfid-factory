@@ -201,7 +201,6 @@ function refreshCurrentView() {
     dashboard: renderDashboard, products: renderProducts,
     withdraw: renderWithdraw, receive: renderReceive, transactions: renderTransactions,
     userLog: renderUserLog, userManagement: renderUserMgmt, history: renderHistory, analytics: renderAnalytics,
-    aiRestock: renderAiRestock,
   };
   if (renderers[currentPage]) renderers[currentPage]();
 }
@@ -303,7 +302,6 @@ function navigateTo(page) {
     history: ['page_history', 'page_history_bread'],
     analytics: ['page_analytics', 'page_analytics_bread'],
     userLog: ['page_userlog', 'page_userlog_bread'], userManagement: ['page_usermgmt', 'page_usermgmt_bread'],
-    aiRestock: ['AI Restock Prediction', 'หน้าหลัก / AI Restock'],
   };
   const [tKey, bKey] = titles[page] || [page, page];
   document.getElementById('pageTitle').textContent = T(tKey);
@@ -316,7 +314,6 @@ function navigateTo(page) {
     dashboard: renderDashboard, products: renderProducts,
     withdraw: renderWithdraw, receive: renderReceive, transactions: renderTransactions,
     userLog: renderUserLog, userManagement: renderUserMgmt, history: renderHistory, analytics: renderAnalytics,
-    aiRestock: renderAiRestock,
   };
   if (renderers[page]) renderers[page]();
   updateTxBadge();
@@ -1202,398 +1199,432 @@ function renderSnapshotTimeline() {
 // =========================================================
 // ANALYTICS PAGE — สรุปภาพรวม
 // =========================================================
-function renderAnalytics() {
-  renderAnalyticsKPI();
-  renderAnalyticsDailyChart();
-  renderAnalyticsDonut();
-  renderAnalyticsTopProducts();
-  renderAnalyticsUserActivity();
-  renderAnalyticsHourly();
+// =========================================================
+// ANALYTICS — Chart.js powered
+// =========================================================
+
+let _anPeriod = 30; // current period in days
+let _anCharts = {};  // keep chart instances to destroy on re-render
+
+function setAnPeriod(days, btn) {
+  _anPeriod = days;
+  document.querySelectorAll('.an2-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAnalyticsLineChart();
 }
 
+function renderAnalytics() {
+  renderAnalyticsKPI();
+  renderAnalyticsLineChart();
+  renderAnalyticsDonut();
+  renderAnalyticsTopBar();
+  renderAnalyticsUserBar();
+  renderAnalyticsHeatmap();
+  renderAnalyticsInsights();
+  renderAnalyticsStockHealth();
+}
+
+// ── helpers ────────────────────────────────────────────
+function destroyChart(key) {
+  if (_anCharts[key]) { _anCharts[key].destroy(); delete _anCharts[key]; }
+}
+
+function getChartColors(n) {
+  const palette = [
+    '#7C3AED','#6366F1','#3B82F6','#10B981','#F59E0B',
+    '#EF4444','#EC4899','#8B5CF6','#14B8A6','#F97316'
+  ];
+  return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
+}
+
+function isDark() {
+  return document.documentElement.getAttribute('data-theme') !== 'light';
+}
+
+function chartDefaults() {
+  const dark = isDark();
+  return {
+    textColor:  dark ? 'rgba(237,232,255,0.7)' : 'rgba(26,16,64,0.65)',
+    gridColor:  dark ? 'rgba(139,92,246,0.12)'  : 'rgba(109,40,217,0.08)',
+    tickColor:  dark ? 'rgba(237,232,255,0.5)'  : 'rgba(75,58,112,0.7)',
+  };
+}
+
+// ── KPI ────────────────────────────────────────────────
 function renderAnalyticsKPI() {
   const g = document.getElementById('analyticsKpiGrid');
   if (!g) return;
-  const total = products.reduce((s, p) => s + p.quantity, 0);
-  const totalOut = transactions.filter(t => t.type === 'out').reduce((s, t) => s + t.qty, 0);
-  const totalIn = transactions.filter(t => t.type === 'in').reduce((s, t) => s + t.qty, 0);
-  const low = products.filter(p => p.quantity <= p.minStock).length;
-  const today = getNow().slice(0, 10);
-  const todayTx = transactions.filter(t => t.time && t.time.startsWith(today)).length;
-  const activeUsers = users.filter(u => u.active !== false).length;
-  g.innerHTML = `
-    <div class="an-kpi" style="--kpi-color:var(--accent-cyan)"><div class="an-kpi-icon"><i class="fas fa-boxes-stacked"></i></div><div class="an-kpi-info"><div class="an-kpi-value">${total.toLocaleString()}</div><div class="an-kpi-label" data-i18n="an_kpi_stock">${T('an_kpi_stock')}</div></div></div>
-    <div class="an-kpi" style="--kpi-color:var(--accent-purple)"><div class="an-kpi-icon"><i class="fas fa-box"></i></div><div class="an-kpi-info"><div class="an-kpi-value">${products.length}</div><div class="an-kpi-label" data-i18n="an_kpi_products">${T('an_kpi_products')}</div></div></div>
-    <div class="an-kpi" style="--kpi-color:var(--accent-red)"><div class="an-kpi-icon"><i class="fas fa-arrow-right-from-bracket"></i></div><div class="an-kpi-info"><div class="an-kpi-value">${totalOut.toLocaleString()}</div><div class="an-kpi-label" data-i18n="an_kpi_out">${T('an_kpi_out')}</div></div></div>
-    <div class="an-kpi" style="--kpi-color:var(--accent-green)"><div class="an-kpi-icon"><i class="fas fa-arrow-right-to-bracket"></i></div><div class="an-kpi-info"><div class="an-kpi-value">${totalIn.toLocaleString()}</div><div class="an-kpi-label" data-i18n="an_kpi_in">${T('an_kpi_in')}</div></div></div>
-    <div class="an-kpi" style="--kpi-color:var(--accent-amber)"><div class="an-kpi-icon"><i class="fas fa-triangle-exclamation"></i></div><div class="an-kpi-info"><div class="an-kpi-value">${low}</div><div class="an-kpi-label" data-i18n="an_kpi_low">${T('an_kpi_low')}</div></div></div>
-    <div class="an-kpi" style="--kpi-color:#a78bfa"><div class="an-kpi-icon"><i class="fas fa-bolt"></i></div><div class="an-kpi-info"><div class="an-kpi-value">${todayTx}</div><div class="an-kpi-label" data-i18n="an_kpi_today">${T('an_kpi_today')}</div></div></div>`;
+  const total    = products.reduce((s,p) => s + p.quantity, 0);
+  const totalOut = transactions.filter(t=>t.type==='out').reduce((s,t)=>s+Number(t.qty||0),0);
+  const totalIn  = transactions.filter(t=>t.type==='in' ).reduce((s,t)=>s+Number(t.qty||0),0);
+  const low      = products.filter(p=>p.quantity<=p.minStock).length;
+  const today    = getNow().slice(0,10);
+  const todayOut = transactions.filter(t=>t.type==='out'&&t.time?.startsWith(today)).reduce((s,t)=>s+Number(t.qty||0),0);
+  const todayIn  = transactions.filter(t=>t.type==='in' &&t.time?.startsWith(today)).reduce((s,t)=>s+Number(t.qty||0),0);
+  // Week-over-week trend
+  const w1start = new Date(Date.now()-14*864e5), w1end = new Date(Date.now()-7*864e5);
+  const w2start = new Date(Date.now()-7*864e5);
+  const weekOut1 = transactions.filter(t=>t.type==='out'&&t.time&&new Date(t.time)>=w1start&&new Date(t.time)<w1end).reduce((s,t)=>s+Number(t.qty||0),0);
+  const weekOut2 = transactions.filter(t=>t.type==='out'&&t.time&&new Date(t.time)>=w2start).reduce((s,t)=>s+Number(t.qty||0),0);
+  const trend = weekOut1 > 0 ? ((weekOut2-weekOut1)/weekOut1*100).toFixed(0) : null;
+  const trendHtml = trend !== null
+    ? `<div class="an2-kpi-trend ${Number(trend)>=0?'up':'down'}">${Number(trend)>=0?'▲':'▼'} ${Math.abs(trend)}% vs สัปดาห์ก่อน</div>`
+    : '';
+
+  const kpis = [
+    { icon:'fa-boxes-stacked', label:'สต็อกรวม',       value:total.toLocaleString(),   sub:`${products.length} รายการ`,  color:'#7C3AED', accent:'var(--g-primary)' },
+    { icon:'fa-arrow-right-from-bracket', label:'เบิกออกรวม', value:totalOut.toLocaleString(), sub:trendHtml||'ตลอดเวลา', color:'#EF4444', accent:'var(--g-danger)' },
+    { icon:'fa-arrow-right-to-bracket',   label:'รับเข้ารวม',  value:totalIn.toLocaleString(),  sub:'ตลอดเวลา',           color:'#10B981', accent:'var(--g-success)' },
+    { icon:'fa-sun', label:'วันนี้เบิก/รับ',  value:`${todayOut}/${todayIn}`, sub:'ชิ้น', color:'#F59E0B', accent:'var(--g-amber)' },
+    { icon:'fa-triangle-exclamation', label:'สินค้าใกล้หมด', value:low, sub:'รายการ', color:'#F59E0B', accent:'var(--g-amber)' },
+    { icon:'fa-percent', label:'อัตราหมุนเวียน', value: products.length ? (totalOut/Math.max(total,1)*100).toFixed(1)+'%' : '-', sub:'เบิก/สต็อกรวม', color:'#6366F1', accent:'var(--g-primary)' },
+  ];
+  g.innerHTML = kpis.map(k => `
+    <div class="an2-kpi" style="--kc:${k.color};--ka:${k.accent}">
+      <div class="an2-kpi-top">
+        <div class="an2-kpi-icon"><i class="fas ${k.icon}"></i></div>
+        <div class="an2-kpi-label">${k.label}</div>
+      </div>
+      <div class="an2-kpi-value">${k.value}</div>
+      <div class="an2-kpi-sub">${k.sub}</div>
+    </div>`).join('');
 }
 
-function renderAnalyticsDailyChart() {
-  const c = document.getElementById('analyticsDailyChart');
-  if (!c) return;
+// ── Line chart: 30-day trend ───────────────────────────
+function renderAnalyticsLineChart() {
+  destroyChart('line');
+  const canvas = document.getElementById('anLineChart');
+  if (!canvas) return;
   const days = [];
-  const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 13);
-  let cursor = new Date(start);
-  while (cursor <= end) { days.push(cursor.toISOString().slice(0, 10)); cursor.setDate(cursor.getDate() + 1); }
-  const data = days.map(day => {
-    const outQty = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
-    const inQty = transactions.filter(t => t.type === 'in' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
-    return { day: day.slice(5), outQty, inQty };
-  });
-  const max = Math.max(...data.map(d => Math.max(d.outQty, d.inQty)), 1);
-  if (!data.some(d => d.outQty || d.inQty)) {
-    c.innerHTML = `<div class="empty-state"><i class="fas fa-chart-area"></i><p>${T('an_no_data')}</p></div>`;
-    return;
+  for (let i = _anPeriod-1; i >= 0; i--) {
+    const d = new Date(Date.now() - i*864e5);
+    days.push(d.toISOString().slice(0,10));
   }
-  c.innerHTML = `<div class="an-chart-grid">${data.map(d => `<div class="an-chart-col">
-    <div class="an-chart-bars">
-      <div class="an-bar an-bar-out" style="height:${d.outQty / max * 100}%" title="${T('tx_type_out')} ${d.outQty}"><span>${d.outQty || ''}</span></div>
-      <div class="an-bar an-bar-in" style="height:${d.inQty / max * 100}%" title="${T('tx_type_in')} ${d.inQty}"><span>${d.inQty || ''}</span></div>
-    </div>
-    <div class="an-chart-label">${d.day}</div>
-  </div>`).join('')}</div>
-  <div class="an-chart-legend"><span class="an-legend-out">■ ${T('tx_type_out')}</span><span class="an-legend-in">■ ${T('tx_type_in')}</span></div>`;
-}
+  const outData = days.map(d => transactions.filter(t=>t.type==='out'&&t.time?.startsWith(d)).reduce((s,t)=>s+Number(t.qty||0),0));
+  const inData  = days.map(d => transactions.filter(t=>t.type==='in' &&t.time?.startsWith(d)).reduce((s,t)=>s+Number(t.qty||0),0));
+  const labels  = days.map(d => d.slice(5));
+  const { textColor, gridColor, tickColor } = chartDefaults();
 
-function renderAnalyticsDonut() {
-  const el = document.getElementById('analyticsDonut');
-  if (!el) return;
-  const counts = {};
-  products.forEach(p => { const c = p.category || 'Other'; counts[c] = (counts[c] || 0) + p.quantity; });
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  const total = entries.reduce((s, e) => s + e[1], 0);
-  if (!total) { el.innerHTML = `<div class="empty-state"><i class="fas fa-chart-pie"></i><p>${T('an_no_data')}</p></div>`; return; }
-  const colors = ['#00d4ff', '#a78bfa', '#ffb800', '#00ff88', '#ff4757', '#38b6ff', '#ff6b9d', '#ffd43b'];
-  let gradParts = [], cumPct = 0;
-  entries.forEach((e, i) => {
-    const pct = e[1] / total * 100;
-    const color = colors[i % colors.length];
-    gradParts.push(`${color} ${cumPct}% ${cumPct + pct}%`);
-    cumPct += pct;
+  _anCharts.line = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'เบิกออก',
+          data: outData,
+          borderColor: '#EF4444',
+          backgroundColor: 'rgba(239,68,68,0.10)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#EF4444',
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          borderWidth: 2,
+        },
+        {
+          label: 'รับเข้า',
+          data: inData,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16,185,129,0.10)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#10B981',
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          borderWidth: 2,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: textColor, font: { family: "'Plus Jakarta Sans','Noto Sans Thai',sans-serif", size: 12 }, boxWidth: 14, padding: 18 } },
+        tooltip: {
+          backgroundColor: isDark() ? '#1E1640' : '#fff',
+          titleColor: isDark() ? '#EDE8FF' : '#1A1040',
+          bodyColor:  isDark() ? '#A89EC8' : '#4B3A70',
+          borderColor: isDark() ? 'rgba(139,92,246,.25)' : 'rgba(109,40,217,.15)',
+          borderWidth: 1, padding: 10, cornerRadius: 10,
+        },
+      },
+      scales: {
+        x: { ticks: { color: tickColor, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: _anPeriod > 20 ? 10 : 14 }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor }, beginAtZero: true },
+      },
+    }
   });
-  const legendHtml = entries.map((e, i) => {
-    const pct = (e[1] / total * 100).toFixed(1);
-    return `<div class="an-donut-legend-item"><span class="an-donut-dot" style="background:${colors[i % colors.length]}"></span><span class="an-donut-name">${e[0]}</span><span class="an-donut-pct">${pct}%</span></div>`;
-  }).join('');
-  el.innerHTML = `<div class="an-donut" style="background:conic-gradient(${gradParts.join(',')})"><div class="an-donut-hole"><span class="an-donut-total">${total.toLocaleString()}</span><span class="an-donut-sub">${T('an_donut_total')}</span></div></div><div class="an-donut-legend">${legendHtml}</div>`;
 }
 
-function renderAnalyticsTopProducts() {
-  const el = document.getElementById('analyticsTopProducts');
-  if (!el) return;
+// ── Doughnut: category ─────────────────────────────────
+function renderAnalyticsDonut() {
+  destroyChart('donut');
+  const canvas = document.getElementById('anDonutChart');
+  if (!canvas) return;
   const counts = {};
-  transactions.filter(t => t.type === 'out').forEach(t => { counts[t.product] = (counts[t.product] || 0) + t.qty; });
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  if (!sorted.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-trophy"></i><p>${T('an_no_data')}</p></div>`; return; }
-  const max = sorted[0][1];
-  el.innerHTML = sorted.map(([name, count], i) => {
-    const pct = count / max * 100;
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-    return `<div class="an-top-item"><span class="an-top-rank">${medal}</span><div class="an-top-info"><div class="an-top-name">${name}</div><div class="an-top-bar-wrap"><div class="an-top-bar" style="width:${pct}%"></div></div></div><span class="an-top-count">${count}</span></div>`;
-  }).join('');
+  transactions.filter(t=>t.type==='out').forEach(t => { const p = products.find(x=>x.name===t.product); const c = p?.category||t.product||'อื่นๆ'; counts[c]=(counts[c]||0)+Number(t.qty||0); });
+  if (!Object.keys(counts).length) {
+    // fallback: count by stock qty
+    products.forEach(p => { const c = p.category||'อื่นๆ'; counts[c]=(counts[c]||0)+p.quantity; });
+  }
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if (!entries.length) return;
+  const colors = getChartColors(entries.length);
+  const { textColor } = chartDefaults();
+
+  _anCharts.donut = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(e=>e[0]),
+      datasets: [{ data: entries.map(e=>e[1]), backgroundColor: colors, borderWidth: 2, borderColor: isDark()?'#160F2A':'#fff', hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: textColor, font: { size: 11 }, padding: 12, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: isDark()?'#1E1640':'#fff',
+          titleColor: isDark()?'#EDE8FF':'#1A1040',
+          bodyColor:  isDark()?'#A89EC8':'#4B3A70',
+          borderColor: isDark()?'rgba(139,92,246,.25)':'rgba(109,40,217,.15)',
+          borderWidth: 1, cornerRadius: 10,
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${(ctx.parsed/ctx.dataset.data.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)` }
+        },
+      }
+    }
+  });
 }
 
-function renderAnalyticsUserActivity() {
-  const el = document.getElementById('analyticsUserActivity');
-  if (!el) return;
+// ── Horizontal bar: top 10 products ───────────────────
+function renderAnalyticsTopBar() {
+  destroyChart('bar');
+  const canvas = document.getElementById('anBarChart');
+  if (!canvas) return;
   const counts = {};
-  transactions.forEach(t => { counts[t.user] = (counts[t.user] || 0) + 1; });
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  if (!sorted.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>${T('an_no_data')}</p></div>`; return; }
-  const max = sorted[0][1];
-  el.innerHTML = sorted.map(([name, count]) => {
-    const pct = count / max * 100;
-    return `<div class="an-user-item"><div class="an-user-avatar">${name.charAt(0)}</div><div class="an-user-info"><div class="an-user-name">${name}</div><div class="an-user-bar-wrap"><div class="an-user-bar" style="width:${pct}%"></div></div></div><span class="an-user-count">${count} ${T('an_user_txs')}</span></div>`;
-  }).join('');
+  transactions.filter(t=>t.type==='out').forEach(t => { counts[t.product]=(counts[t.product]||0)+Number(t.qty||0); });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
+  if (!sorted.length) return;
+  const { textColor, gridColor, tickColor } = chartDefaults();
+
+  _anCharts.bar = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(e=>e[0].length>16?e[0].slice(0,14)+'…':e[0]),
+      datasets: [{
+        label: 'จำนวนเบิก',
+        data: sorted.map(e=>e[1]),
+        backgroundColor: sorted.map((_,i) => `hsla(${260-i*8},70%,${isDark()?60:50}%,0.75)`),
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark()?'#1E1640':'#fff',
+          titleColor: isDark()?'#EDE8FF':'#1A1040',
+          bodyColor: isDark()?'#A89EC8':'#4B3A70',
+          borderColor: isDark()?'rgba(139,92,246,.25)':'rgba(109,40,217,.15)',
+          borderWidth:1, cornerRadius:10,
+        }
+      },
+      scales: {
+        x: { ticks:{color:tickColor,font:{size:11}}, grid:{color:gridColor}, beginAtZero:true },
+        y: { ticks:{color:textColor,font:{size:11}}, grid:{display:false} },
+      }
+    }
+  });
 }
 
-function renderAnalyticsHourly() {
-  const el = document.getElementById('analyticsHourly');
+// ── Bar: user activity ──────────────────────────────────
+function renderAnalyticsUserBar() {
+  destroyChart('user');
+  const canvas = document.getElementById('anUserChart');
+  if (!canvas) return;
+  const counts = {};
+  transactions.forEach(t => { if(t.user) counts[t.user]=(counts[t.user]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if (!sorted.length) return;
+  const { textColor, gridColor, tickColor } = chartDefaults();
+
+  _anCharts.user = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(e=>e[0]),
+      datasets: [{
+        label: 'จำนวน transaction',
+        data: sorted.map(e=>e[1]),
+        backgroundColor: '#10B981CC',
+        borderRadius: 6,
+        borderColor: '#10B981',
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark()?'#1E1640':'#fff',
+          titleColor: isDark()?'#EDE8FF':'#1A1040',
+          bodyColor: isDark()?'#A89EC8':'#4B3A70',
+          borderColor: isDark()?'rgba(16,185,129,.25)':'rgba(16,185,129,.15)',
+          borderWidth:1, cornerRadius:10,
+        }
+      },
+      scales: {
+        x: { ticks:{color:tickColor,font:{size:11}}, grid:{display:false} },
+        y: { ticks:{color:tickColor,font:{size:11}}, grid:{color:gridColor}, beginAtZero:true },
+      }
+    }
+  });
+}
+
+// ── Heatmap: hourly ────────────────────────────────────
+function renderAnalyticsHeatmap() {
+  const el = document.getElementById('anHeatmap');
+  const lg = document.getElementById('anHeatLegend');
   if (!el) return;
   const hours = Array(24).fill(0);
   transactions.forEach(t => {
     if (!t.time) return;
     const h = parseInt(t.time.split(' ')[1]?.split(':')[0]);
-    if (!isNaN(h)) hours[h]++;
+    if (!isNaN(h) && h>=0 && h<24) hours[h]++;
   });
   const max = Math.max(...hours, 1);
-  if (!hours.some(h => h > 0)) { el.innerHTML = `<div class="empty-state"><i class="fas fa-clock"></i><p>${T('an_no_data')}</p></div>`; return; }
-  el.innerHTML = `<div class="an-heat-grid">${hours.map((count, h) => {
-    const intensity = count / max;
-    const bg = count === 0 ? 'rgba(255,255,255,.03)' : `rgba(0,212,255,${0.15 + intensity * 0.85})`;
-    return `<div class="an-heat-cell" style="background:${bg}" title="${String(h).padStart(2, '0')}:00 — ${count} ${T('an_user_txs')}"><div class="an-heat-hour">${String(h).padStart(2, '0')}</div><div class="an-heat-count">${count || ''}</div></div>`;
-  }).join('')}</div>`;
+  const isDk = isDark();
+
+  el.innerHTML = hours.map((count,h) => {
+    const pct = count/max;
+    const bg = count===0
+      ? (isDk?'rgba(139,92,246,.06)':'rgba(109,40,217,.05)')
+      : isDk
+        ? `rgba(124,58,237,${0.15+pct*0.75})`
+        : `rgba(99,102,241,${0.12+pct*0.70})`;
+    const lbl = String(h).padStart(2,'0')+':00';
+    return `<div class="an2-heat-cell" style="background:${bg}" title="${lbl} — ${count} รายการ">
+      <div class="an2-heat-h">${String(h).padStart(2,'0')}</div>
+      <div class="an2-heat-n">${count||''}</div>
+    </div>`;
+  }).join('');
+
+  if (lg) lg.innerHTML = `<span style="font-size:11px;color:var(--txt3);">น้อย</span>
+    <div class="an2-heat-leg">${[0.05,0.25,0.5,0.75,1].map(p=>`<span style="background:${isDk?`rgba(124,58,237,${0.15+p*0.75})`:`rgba(99,102,241,${0.12+p*0.70})`}"></span>`).join('')}</div>
+    <span style="font-size:11px;color:var(--txt3);">มาก</span>`;
 }
+
+// ── Stock health ──────────────────────────────────────
+function renderAnalyticsStockHealth() {
+  const el = document.getElementById('anStockHealth');
+  if (!el) return;
+  const total    = products.length;
+  const critical = products.filter(p=>p.quantity===0).length;
+  const low      = products.filter(p=>p.quantity>0&&p.quantity<=p.minStock).length;
+  const ok       = total - critical - low;
+  const pctOk    = total ? Math.round(ok/total*100) : 0;
+  const pctLow   = total ? Math.round(low/total*100) : 0;
+  const pctCrit  = total ? Math.round(critical/total*100) : 0;
+
+  el.innerHTML = `
+    <div class="an2-health-gauge">
+      <div class="an2-gauge-ring">
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="${isDark()?'rgba(139,92,246,.12)':'rgba(109,40,217,.08)'}" stroke-width="14"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#10B981" stroke-width="14"
+            stroke-dasharray="${pctOk*3.14159} 314.159" stroke-dashoffset="78.54"
+            stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#F59E0B" stroke-width="14"
+            stroke-dasharray="${pctLow*3.14159} 314.159" stroke-dashoffset="${78.54 - pctOk*3.14159}"
+            stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/>
+        </svg>
+        <div class="an2-gauge-center">
+          <div class="an2-gauge-pct">${pctOk}%</div>
+          <div class="an2-gauge-sub">ปกติ</div>
+        </div>
+      </div>
+    </div>
+    <div class="an2-health-legend">
+      <div class="an2-health-item">
+        <span class="an2-health-dot" style="background:#10B981"></span>
+        <span class="an2-health-lbl">ปกติ</span>
+        <span class="an2-health-count">${ok} รายการ</span>
+      </div>
+      <div class="an2-health-item">
+        <span class="an2-health-dot" style="background:#F59E0B"></span>
+        <span class="an2-health-lbl">ใกล้หมด</span>
+        <span class="an2-health-count">${low} รายการ</span>
+      </div>
+      <div class="an2-health-item">
+        <span class="an2-health-dot" style="background:#EF4444"></span>
+        <span class="an2-health-lbl">หมดแล้ว</span>
+        <span class="an2-health-count">${critical} รายการ</span>
+      </div>
+    </div>
+    <div class="an2-health-bar">
+      <div style="width:${pctOk}%;background:#10B981;border-radius:4px 0 0 4px"></div>
+      <div style="width:${pctLow}%;background:#F59E0B"></div>
+      <div style="width:${pctCrit}%;background:#EF4444;border-radius:0 4px 4px 0"></div>
+    </div>`;
+}
+
+// ── Insights ──────────────────────────────────────────
+function renderAnalyticsInsights() {
+  const el = document.getElementById('anInsights');
+  if (!el) return;
+  const insights = [];
+
+  // Most active day of week
+  const dayCount = Array(7).fill(0);
+  transactions.forEach(t => { if(t.time) dayCount[new Date(t.time).getDay()]++; });
+  const maxDay = dayCount.indexOf(Math.max(...dayCount));
+  const dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  if (Math.max(...dayCount)>0)
+    insights.push({ icon:'fa-calendar-day', color:'#7C3AED', text:`วัน<strong>${dayNames[maxDay]}</strong>มีกิจกรรมมากที่สุด (${dayCount[maxDay]} รายการ)` });
+
+  // Peak hour
+  const hours = Array(24).fill(0);
+  transactions.forEach(t => { if(t.time){ const h=parseInt(t.time.split(' ')[1]?.split(':')[0]); if(!isNaN(h)) hours[h]++; }});
+  const peakH = hours.indexOf(Math.max(...hours));
+  if (Math.max(...hours)>0)
+    insights.push({ icon:'fa-clock', color:'#F59E0B', text:`ช่วงเวลา <strong>${String(peakH).padStart(2,'0')}:00–${String(peakH+1).padStart(2,'0')}:00</strong> มี transaction บ่อยที่สุด` });
+
+  // Top product
+  const pCounts = {};
+  transactions.filter(t=>t.type==='out').forEach(t=>{pCounts[t.product]=(pCounts[t.product]||0)+Number(t.qty||0);});
+  const topP = Object.entries(pCounts).sort((a,b)=>b[1]-a[1])[0];
+  if (topP) insights.push({ icon:'fa-trophy', color:'#F59E0B', text:`สินค้าเบิกบ่อยที่สุด: <strong>${topP[0]}</strong> (${topP[1].toLocaleString()} ชิ้น)` });
+
+  // Low stock warning
+  const critItems = products.filter(p=>p.quantity===0);
+  if (critItems.length)
+    insights.push({ icon:'fa-circle-exclamation', color:'#EF4444', text:`มี <strong>${critItems.length} รายการ</strong> ที่สต็อกหมดแล้ว ควรสั่งเพิ่มด่วน` });
+
+  // Balance ratio
+  const totalOut = transactions.filter(t=>t.type==='out').reduce((s,t)=>s+Number(t.qty||0),0);
+  const totalIn  = transactions.filter(t=>t.type==='in' ).reduce((s,t)=>s+Number(t.qty||0),0);
+  if (totalOut && totalIn) {
+    const ratio = (totalOut/totalIn).toFixed(2);
+    insights.push({ icon:'fa-scale-balanced', color:'#6366F1', text:`อัตราส่วนเบิก/รับ = <strong>${ratio}</strong> — ${Number(ratio)>1.5?'เบิกสูงกว่ารับมาก ควรเพิ่มการรับเข้า':'อยู่ในระดับปกติ'}` });
+  }
+
+  if (!insights.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-lightbulb"></i><p>เพิ่มข้อมูลเพื่อดู insights</p></div>';
+    return;
+  }
+  el.innerHTML = `<div class="an2-insights-grid">${insights.map(ins=>`
+    <div class="an2-insight-card">
+      <div class="an2-insight-icon" style="background:${ins.color}22;color:${ins.color}"><i class="fas ${ins.icon}"></i></div>
+      <div class="an2-insight-text">${ins.text}</div>
+    </div>`).join('')}</div>`;
+}
+
 
 // ===== UTILS =====
 function getNow() { const d = new Date(); return `${d.getFullYear()}-${S(d.getMonth() + 1)}-${S(d.getDate())} ${S(d.getHours())}:${S(d.getMinutes())}:${S(d.getSeconds())}`; }
 function S(n) { return String(n).padStart(2, '0'); }
 function fmtTime(str) { if (!str) return '-'; try { const [date, time] = str.split(' '); const [y, m, d] = date.split('-'); return `${d}/${m} ${time ? time.slice(0, 5) : ''}`; } catch { return str; } }
-
-// =====================================================
-// AI RESTOCK PREDICTION
-// =====================================================
-
-async function runAiRestock() {
-  const btn = document.getElementById('aiAnalyzeBtn');
-  const emptyEl   = document.getElementById('aiRestockEmpty');
-  const loadingEl = document.getElementById('aiRestockLoading');
-  const resultsEl = document.getElementById('aiRestockResults');
-  const stepsEl   = document.getElementById('aiLoadingSteps');
-
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังวิเคราะห์...';
-  emptyEl.style.display   = 'none';
-  resultsEl.style.display = 'none';
-  loadingEl.style.display = 'flex';
-
-  const steps = [
-    { icon: 'fa-database',    text: 'โหลดข้อมูลสต็อกและ transaction' },
-    { icon: 'fa-chart-line',  text: 'วิเคราะห์ pattern การเบิก 30 วัน' },
-    { icon: 'fa-robot',       text: 'ส่งข้อมูลให้ Claude AI วิเคราะห์' },
-    { icon: 'fa-lightbulb',   text: 'สร้างคำแนะนำ restock' },
-  ];
-
-  stepsEl.innerHTML = steps.map((s,i) =>
-    `<div class="ai-step" id="aiStep${i}"><i class="fas ${s.icon}"></i>${s.text}</div>`
-  ).join('');
-
-  // Helper to animate steps
-  const activateStep = (i) => {
-    document.getElementById(`aiStep${i}`)?.classList.add('active');
-  };
-  const doneStep = (i) => {
-    const el = document.getElementById(`aiStep${i}`);
-    if (el) { el.classList.remove('active'); el.classList.add('done'); el.querySelector('i').className = 'fas fa-check-circle'; }
-  };
-
-  try {
-    activateStep(0);
-    await sleep(400);
-
-    // Build summary data for each product
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now - 30 * 86400000);
-    const recentTx = transactions.filter(t => t.time && new Date(t.time) >= thirtyDaysAgo);
-
-    doneStep(0); activateStep(1);
-    await sleep(300);
-
-    // Per-product stats
-    const productStats = products.map(p => {
-      const outTx = recentTx.filter(t => t.type === 'out' && (t.sku === p.sku || t.product === p.name));
-      const inTx  = recentTx.filter(t => t.type === 'in'  && (t.sku === p.sku || t.product === p.name));
-      const totalOut = outTx.reduce((s,t) => s + Number(t.qty||0), 0);
-      const totalIn  = inTx.reduce( (s,t) => s + Number(t.qty||0), 0);
-      const txDays   = [...new Set(outTx.map(t => t.time?.slice(0,10)))].length;
-      const avgPerDay= txDays > 0 ? (totalOut / txDays).toFixed(1) : 0;
-      const daysLeft = avgPerDay > 0 ? Math.floor(p.quantity / avgPerDay) : 999;
-      return { ...p, totalOut, totalIn, avgPerDay: Number(avgPerDay), daysLeft, txCount: outTx.length };
-    }).sort((a,b) => a.daysLeft - b.daysLeft);
-
-    doneStep(1); activateStep(2);
-
-    // Build prompt for Claude
-    const lowItems  = productStats.filter(p => p.quantity <= p.minStock);
-    const riskItems = productStats.filter(p => p.daysLeft < 14 && p.daysLeft < 999 && p.quantity > p.minStock);
-    const topItems  = productStats.filter(p => p.totalOut > 0).slice(0, 10);
-
-    const prompt = `คุณคือผู้เชี่ยวชาญด้านการจัดการคลังสินค้าโรงงาน วิเคราะห์ข้อมูลต่อไปนี้และให้คำแนะนำ restock:
-
-**สินค้าที่ต่ำกว่าขั้นต่ำ (${lowItems.length} รายการ):**
-${lowItems.slice(0,8).map(p => `- ${p.name} (${p.sku}): คงเหลือ ${p.quantity} ${p.unit}, ขั้นต่ำ ${p.minStock}, เบิก 30 วัน: ${p.totalOut}`).join('\n') || 'ไม่มี'}
-
-**สินค้าที่มีแนวโน้มจะหมดใน 14 วัน (${riskItems.length} รายการ):**
-${riskItems.slice(0,8).map(p => `- ${p.name}: คงเหลือ ${p.quantity}, เบิก/วัน ~${p.avgPerDay}, คาดว่าจะหมดใน ${p.daysLeft} วัน`).join('\n') || 'ไม่มี'}
-
-**สินค้าที่ถูกเบิกบ่อยที่สุด 30 วันที่ผ่านมา:**
-${topItems.map(p => `- ${p.name}: ${p.totalOut} ${p.unit} (${p.txCount} ครั้ง)`).join('\n') || 'ยังไม่มีข้อมูล'}
-
-**สถิติรวม:**
-- สินค้าทั้งหมด: ${products.length} รายการ
-- Transaction 30 วัน: ${recentTx.length} รายการ
-- เบิกออกรวม: ${recentTx.filter(t=>t.type==='out').reduce((s,t)=>s+Number(t.qty||0),0)} ชิ้น
-
-กรุณาให้คำแนะนำเป็นภาษาไทย สั้นกระชับ 3-5 ย่อหน้า วิเคราะห์สถานการณ์ ความเสี่ยง และแนะนำแผนการ restock ที่เหมาะสม`;
-
-    // Call Claude API via server proxy
-    const response = await fetch('/api/ai/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    });
-
-    doneStep(2); activateStep(3);
-
-    const data = await response.json();
-    if (data.error) throw new Error(data.error);
-    const analysisText = data.text || 'ไม่สามารถวิเคราะห์ได้ในขณะนี้';
-
-    await sleep(300);
-    doneStep(3);
-    await sleep(400);
-
-    // Render results
-    loadingEl.style.display  = 'none';
-    resultsEl.style.display  = 'block';
-
-    renderAiSummary(productStats, lowItems, riskItems);
-    renderAiRecommendations(productStats, lowItems, riskItems);
-    renderAiAnalysisText(analysisText);
-    renderAiTrendChart(productStats);
-
-    document.getElementById('aiLastUpdated').textContent = `อัปเดตเมื่อ ${new Date().toLocaleTimeString('th-TH')}`;
-
-    // Show badge if there are urgent items
-    const alertBadge = document.getElementById('aiAlertBadge');
-    if (alertBadge && lowItems.length > 0) {
-      alertBadge.style.display = 'inline';
-      alertBadge.textContent = lowItems.length;
-    }
-
-  } catch (err) {
-    loadingEl.style.display = 'none';
-    emptyEl.style.display   = 'flex';
-    emptyEl.querySelector('.ai-empty-title').textContent = 'เกิดข้อผิดพลาด';
-    emptyEl.querySelector('.ai-empty-desc').textContent  = err.message || 'ไม่สามารถเชื่อมต่อ Claude API ได้';
-    showToast('ไม่สามารถวิเคราะห์ได้: ' + (err.message || 'API Error'), 'error');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fas fa-sparkles"></i> วิเคราะห์ใหม่ <div class="btn-shine"></div>';
-}
-
-function renderAiSummary(stats, lowItems, riskItems) {
-  const el = document.getElementById('aiSummaryGrid');
-  if (!el) return;
-  const totalOut30 = stats.reduce((s,p) => s + p.totalOut, 0);
-  const urgentCount = lowItems.length;
-  const riskCount   = riskItems.length;
-  const healthyCount = stats.filter(p => p.daysLeft >= 30 || p.daysLeft === 999).length;
-
-  el.innerHTML = `
-    <div class="ai-sum-card" style="--card-accent:var(--g-danger)">
-      <div class="ai-sum-icon">🚨</div>
-      <div class="ai-sum-label">ต่ำกว่าขั้นต่ำ</div>
-      <div class="ai-sum-value" style="color:var(--accent-red)">${urgentCount}</div>
-      <div class="ai-sum-sub">รายการที่ต้องสั่งทันที</div>
-    </div>
-    <div class="ai-sum-card" style="--card-accent:var(--g-amber)">
-      <div class="ai-sum-icon">⚠️</div>
-      <div class="ai-sum-label">ใกล้หมดใน 14 วัน</div>
-      <div class="ai-sum-value" style="color:var(--accent-amber)">${riskCount}</div>
-      <div class="ai-sum-sub">รายการควรวางแผนสั่ง</div>
-    </div>
-    <div class="ai-sum-card" style="--card-accent:var(--g-success)">
-      <div class="ai-sum-icon">✅</div>
-      <div class="ai-sum-label">สต็อกปลอดภัย</div>
-      <div class="ai-sum-value" style="color:var(--accent-green)">${healthyCount}</div>
-      <div class="ai-sum-sub">รายการที่มีสต็อก > 30 วัน</div>
-    </div>
-    <div class="ai-sum-card" style="--card-accent:var(--g-primary)">
-      <div class="ai-sum-icon">📦</div>
-      <div class="ai-sum-label">เบิกออกรวม 30 วัน</div>
-      <div class="ai-sum-value" style="color:var(--accent-cyan)">${totalOut30.toLocaleString()}</div>
-      <div class="ai-sum-sub">ชิ้นจากทุกรายการ</div>
-    </div>`;
-}
-
-function renderAiRecommendations(stats, lowItems, riskItems) {
-  const el = document.getElementById('aiRecommendList');
-  if (!el) return;
-
-  const all = [
-    ...lowItems.map(p => ({ ...p, urgency: 'high', reason: `ต่ำกว่าขั้นต่ำ (${p.minStock})`, suggestQty: Math.max(p.minStock * 3 - p.quantity, p.minStock) })),
-    ...riskItems.map(p => ({ ...p, urgency: 'medium', reason: `หมดใน ~${p.daysLeft} วัน`, suggestQty: Math.ceil(p.avgPerDay * 30) })),
-  ];
-
-  if (!all.length) {
-    el.innerHTML = `<div class="empty-state" style="padding:32px"><i class="fas fa-check-circle" style="color:var(--accent-green);opacity:1;"></i><p>สต็อกทุกรายการอยู่ในระดับปลอดภัย 👍</p></div>`;
-    return;
-  }
-
-  el.innerHTML = all.map(p => `
-    <div class="ai-rec-item">
-      <div class="ai-rec-urgency ${p.urgency}"></div>
-      <div class="ai-rec-info">
-        <div class="ai-rec-name">${p.name}</div>
-        <div class="ai-rec-meta">
-          <span>คงเหลือ: <strong>${p.quantity}</strong> ${p.unit}</span>
-          <span>เบิก/วัน: ~${p.avgPerDay}</span>
-          <span>${p.reason}</span>
-        </div>
-      </div>
-      <div class="ai-urgency-badge ${p.urgency}">
-        ${p.urgency === 'high' ? '🚨 ด่วนมาก' : '⚠️ ควรสั่ง'}
-      </div>
-      <div class="ai-rec-qty">
-        <div class="ai-rec-qty-num">+${p.suggestQty}</div>
-        <div class="ai-rec-qty-unit">${p.unit}</div>
-      </div>
-    </div>`).join('');
-}
-
-function renderAiAnalysisText(text) {
-  const el = document.getElementById('aiAnalysisText');
-  if (!el) return;
-  el.classList.remove('done');
-  el.textContent = '';
-
-  // Typewriter effect
-  let i = 0;
-  const speed = Math.max(8, Math.floor(5000 / text.length));
-  const timer = setInterval(() => {
-    if (i < text.length) {
-      el.textContent += text[i++];
-      el.scrollTop = el.scrollHeight;
-    } else {
-      clearInterval(timer);
-      el.classList.add('done');
-    }
-  }, speed);
-}
-
-function renderAiTrendChart(stats) {
-  const el = document.getElementById('aiTrendChart');
-  if (!el) return;
-
-  const top5 = stats.filter(p => p.totalOut > 0).slice(0, 5);
-  if (!top5.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>ยังไม่มีข้อมูลการเบิก</p></div>'; return; }
-
-  // Build last 14 days data per product
-  const days = [];
-  for (let d = 13; d >= 0; d--) {
-    const dt = new Date(Date.now() - d * 86400000);
-    days.push(dt.toISOString().slice(0, 10));
-  }
-
-  const maxOut = Math.max(...top5.map(p => {
-    return Math.max(...days.map(day =>
-      transactions.filter(t => t.type === 'out' && t.time?.startsWith(day) && (t.sku === p.sku || t.product === p.name))
-        .reduce((s,t) => s + Number(t.qty||0), 0)
-    ));
-  }), 1);
-
-  el.innerHTML = `<div class="ai-trend-inner">${top5.map(p => {
-    const dayData = days.map(day =>
-      transactions.filter(t => t.type==='out' && t.time?.startsWith(day) && (t.sku===p.sku||t.product===p.name))
-        .reduce((s,t)=>s+Number(t.qty||0), 0)
-    );
-    const barH = dayData.map(v => Math.max(Math.round(v / maxOut * 100), v > 0 ? 6 : 0));
-    return `<div class="ai-trend-row">
-      <div class="ai-trend-label" title="${p.name}">${p.name}</div>
-      <div class="ai-trend-bars">
-        ${barH.map((h,i) => `<div class="ai-trend-bar" style="height:${h}%" title="${days[i].slice(5)}: ${dayData[i]}"></div>`).join('')}
-      </div>
-      <div class="ai-trend-total">${p.totalOut}</div>
-    </div>`;
-  }).join('')}</div>`;
-}
-
-function renderAiRestock() {
-  // Just show the page — user clicks analyze button manually
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
