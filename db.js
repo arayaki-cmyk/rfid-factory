@@ -1,291 +1,214 @@
 // =====================================================
-// RFID Factory — Database Layer (Google Sheets)
+// RFID Factory — Express Server
 // =====================================================
-const { google } = require('googleapis');
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const { dao } = require('./db');
 
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS; // JSON string of service account key
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-if (!SPREADSHEET_ID || !GOOGLE_CREDENTIALS) {
-  console.error('❌ SPREADSHEET_ID or GOOGLE_CREDENTIALS env variable is not set!');
-  process.exit(1);
+// ─── In-memory cache ──────────────────────────────────────
+// Cache GET results to avoid hitting Google Sheets on every request.
+// Cache expires after 60 seconds so data stays reasonably fresh.
+const cache = {};
+const CACHE_TTL = 60 * 1000; // 60 seconds
+
+function getCached(key) {
+  const entry = cache[key];
+  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
+  return null;
+}
+function setCached(key, data) {
+  cache[key] = { data, ts: Date.now() };
+}
+function invalidateCache(...keys) {
+  keys.forEach(k => delete cache[k]);
 }
 
-let _sheets = null;
-
-// ─── Write Queue ──────────────────────────────────────────
-// Google Sheets cannot handle concurrent writes safely.
-// Queue all write operations so they run one at a time.
-let _writeQueue = Promise.resolve();
-function queueWrite(fn) {
-  _writeQueue = _writeQueue.then(fn).catch(err => {
-    console.error('Write queue error:', err.message);
-  });
-  return _writeQueue;
+// Retry wrapper for Google Sheets calls (handles transient 429/500 errors)
+async function withRetry(fn, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try { return await fn(); }
+    catch (e) {
+      const isRetryable = e.message?.includes('429') || e.message?.includes('503') || e.message?.includes('ECONNRESET');
+      if (i < retries - 1 && isRetryable) {
+        await new Promise(r => setTimeout(r, delay * (i + 1)));
+      } else { throw e; }
+    }
+  }
 }
 // ──────────────────────────────────────────────────────────
 
-async function getSheets() {
-  if (_sheets) return _sheets;
-  const credentials = JSON.parse(GOOGLE_CREDENTIALS);
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  _sheets = google.sheets({ version: 'v4', auth });
-  console.log('✅ Connected to Google Sheets');
-  await ensureSheets();
-  return _sheets;
-}
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Sheet names for each collection
-const SHEETS = {
-  users: 'users',
-  products: 'products',
-  transactions: 'transactions',
-  logs: 'logs',
-  snapshots: 'snapshots',
-};
+// ===== AUTH =====
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' });
+        const user = await dao.getUserByCredentials(username, password);
+        if (!user) return res.status(401).json({ error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+        res.json(user);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
-// Ensure all sheets exist with headers
-async function ensureSheets() {
-  const sheets = _sheets;
-  const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
-  const existing = meta.data.sheets.map(s => s.properties.title);
+// ===== PRODUCTS =====
+app.get('/api/products', async (req, res) => {
+    try {
+        const cached = getCached('products');
+        if (cached) return res.json(cached);
+        const data = await withRetry(() => dao.getAllProducts());
+        setCached('products', data);
+        res.json(data);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/products', async (req, res) => {
+    try {
+        const { sku, name, rfid, category, unit, location, quantity, minStock, updatedAt } = req.body;
+        if (!sku || !name) return res.status(400).json({ error: 'กรุณากรอกรหัสและชื่อสินค้า' });
+        const result = await withRetry(() => dao.insertProduct({ sku, name, rfid: rfid || '', category: category || '', unit: unit || 'ชิ้น', location: location || '', quantity: quantity || 0, minStock: minStock || 0, updatedAt: updatedAt || '' }));
+        invalidateCache('products');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const result = await withRetry(() => dao.updateProduct(parseInt(req.params.id), req.body));
+        if (!result) return res.status(404).json({ error: 'ไม่พบสินค้า' });
+        invalidateCache('products');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/products/:id/quantity', async (req, res) => {
+    try {
+        const { quantity, updatedAt } = req.body;
+        if (quantity === undefined) return res.status(400).json({ error: 'กรุณาระบุจำนวน' });
+        const result = await withRetry(() => dao.updateProductQty(parseInt(req.params.id), quantity, updatedAt || ''));
+        invalidateCache('products');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        await withRetry(() => dao.deleteProduct(parseInt(req.params.id)));
+        invalidateCache('products');
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
-  const headers = {
-    users:        ['id','name','username','password','role','dept','active'],
-    products:     ['id','sku','name','rfid','category','unit','location','quantity','minStock','updatedAt'],
-    transactions: ['id','type','rfid','product','sku','qty','user','time','reason'],
-    logs:         ['time','user','role','action','detail'],
-    snapshots:    ['date','data'],
-  };
+// ===== TRANSACTIONS =====
+app.get('/api/transactions', async (req, res) => {
+    try {
+        const cached = getCached('transactions');
+        if (cached) return res.json(cached);
+        const data = await withRetry(() => dao.getAllTransactions());
+        setCached('transactions', data);
+        res.json(data);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/transactions', async (req, res) => {
+    try {
+        const { type, rfid, product, sku, qty, user, time, reason } = req.body;
+        const result = await withRetry(() => dao.insertTransaction({ type: type || 'out', rfid: rfid || '', product: product || '', sku: sku || '', qty: qty || 0, user: user || '', time: time || '', reason: reason || '' }));
+        invalidateCache('transactions');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
-  const requests = [];
-  for (const [name] of Object.entries(SHEETS)) {
-    if (!existing.includes(name)) {
-      requests.push({ addSheet: { properties: { title: name } } });
+// ===== USERS =====
+app.get('/api/users', async (req, res) => {
+    try { res.json(await dao.getAllUsers()); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/users', async (req, res) => {
+    try {
+        const { name, username, password, role, dept } = req.body;
+        if (!name || !username || !password) return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบ' });
+        const users = await dao.getAllUsers();
+        if (users.find(u => u.username === username)) return res.status(400).json({ error: 'Username ซ้ำ' });
+        res.json(await dao.insertUser({ name, username, password, role: role || 'staff', dept: dept || 'general', active: true }));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const result = await dao.updateUser(parseInt(req.params.id), req.body);
+        if (!result) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/users/:id/toggle', async (req, res) => {
+    try {
+        const result = await dao.toggleUserActive(parseInt(req.params.id));
+        res.json({ success: true, active: result?.active });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== LOGS =====
+app.get('/api/logs', async (req, res) => {
+    try { res.json(await dao.getAllLogs()); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/logs', async (req, res) => {
+    try {
+        const { time, user, role, action, detail } = req.body;
+        await dao.insertLog({ time: time || '', user: user || '', role: role || '', action: action || '', detail: detail || '' });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== SNAPSHOTS =====
+app.get('/api/snapshots', async (req, res) => {
+    try { res.json(await dao.getAllSnapshots()); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/snapshots', async (req, res) => {
+    try {
+        const { date, data } = req.body;
+        if (!date) return res.status(400).json({ error: 'กรุณาระบุวันที่' });
+        res.json(await dao.upsertSnapshot(date, data || []));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== CLAUDE AI PROXY =====
+app.post('/api/ai/analyze', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        if (!prompt) return res.status(400).json({ error: 'กรุณาระบุ prompt' });
+
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 1000,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            return res.status(response.status).json({ error: errData.error?.message || 'Claude API Error' });
+        }
+
+        const data = await response.json();
+        res.json({ text: data.content?.[0]?.text || '' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
-  }
-  if (requests.length > 0) {
-    await sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, requestBody: { requests } });
-  }
+});
 
-  // Write headers row if sheet is empty
-  for (const [name, cols] of Object.entries(headers)) {
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${name}!A1:Z1`,
-    });
-    if (!res.data.values || res.data.values.length === 0) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${name}!A1`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [cols] },
-      });
-    }
-  }
+// ===== SPA FALLBACK =====
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-  // Seed default users if empty
-  await seedDefaultUsers(sheets);
-}
-
-async function seedDefaultUsers(sheets) {
-  const rows = await readAll('users', sheets);
-  if (rows.length === 0) {
-    const defaults = [
-      [1, 'ผู้ดูแลระบบ',     'admin',     '1234', 'admin',     'it',         true],
-      [2, 'เจ้าหน้าที่คลัง', 'warehouse', '1234', 'warehouse', 'warehouse',  true],
-      [3, 'ผู้เบิกสินค้า',   'staff',     '1234', 'staff',     'production', true],
-    ];
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'users!A2',
-      valueInputOption: 'RAW',
-      requestBody: { values: defaults },
-    });
-    console.log('✅ Seeded default users');
-  }
-}
-
-// Read all rows as array of objects
-async function readAll(sheetName, sheetsClient) {
-  const s = sheetsClient || await getSheets();
-  const res = await s.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${sheetName}!A1:Z`,
-  });
-  const [headerRow, ...dataRows] = res.data.values || [[]];
-  if (!headerRow || dataRows.length === 0) return [];
-  return dataRows.map(row =>
-    Object.fromEntries(headerRow.map((key, i) => [key, parseVal(row[i], key)]))
-  );
-}
-
-
-// Fields that must always stay as strings — never coerce to number
-// e.g. rfid '0003182354' must NOT become number 3182354
-const STRING_FIELDS = new Set([
-  'rfid', 'sku', 'username', 'password', 'time', 'updatedAt', 'reason',
-  'detail', 'action', 'location', 'unit', 'category', 'name', 'type',
-  'date', 'data', 'dept', 'role', 'user', 'product',
-]);
-
-function parseVal(v, fieldName) {
-  if (v === undefined || v === '') return '';
-  if (v === 'true') return true;
-  if (v === 'false') return false;
-  if (fieldName && STRING_FIELDS.has(fieldName)) return String(v);
-  const n = Number(v);
-  return isNaN(n) || v === '' ? v : n;
-}
-
-// Append a new row (queued)
-function appendRow(sheetName, headers, obj) {
-  return queueWrite(async () => {
-    const s = await getSheets();
-    const row = headers.map(h => (obj[h] !== undefined ? obj[h] : ''));
-    await s.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A2`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [row] },
-    });
-  });
-}
-
-// Overwrite all data rows (queued — prevents concurrent writes)
-function writeAll(sheetName, headers, data) {
-  return queueWrite(async () => {
-    const s = await getSheets();
-    const rows = data.map(obj => headers.map(h => (obj[h] !== undefined ? obj[h] : '')));
-    // Clear then rewrite atomically within the queue
-    await s.spreadsheets.values.clear({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A2:Z`,
-    });
-    if (rows.length > 0) {
-      await s.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${sheetName}!A2`,
-        valueInputOption: 'RAW',
-        requestBody: { values: rows },
-      });
-    }
-  });
-}
-
-async function nextId(sheetName) {
-  const data = await readAll(sheetName);
-  if (data.length === 0) return 1;
-  return Math.max(...data.map(d => Number(d.id) || 0)) + 1;
-}
-
-const USER_HEADERS = ['id','name','username','password','role','dept','active'];
-const PRODUCT_HEADERS = ['id','sku','name','rfid','category','unit','location','quantity','minStock','updatedAt'];
-const TX_HEADERS = ['id','type','rfid','product','sku','qty','user','time','reason'];
-const LOG_HEADERS = ['time','user','role','action','detail'];
-const SNAP_HEADERS = ['date','data'];
-
-const dao = {
-  // --- Users ---
-  async getAllUsers() {
-    const data = await readAll('users');
-    return data.sort((a, b) => a.id - b.id);
-  },
-  async getUserByCredentials(username, password) {
-    const users = await readAll('users');
-    return users.find(u =>
-      u.username?.toLowerCase() === username?.toLowerCase() &&
-      String(u.password) === String(password) &&
-      u.active !== false
-    ) || null;
-  },
-  async insertUser(data) {
-    const user = { id: await nextId('users'), ...data };
-    await appendRow('users', USER_HEADERS, user);
-    return user;
-  },
-  async updateUser(id, data) {
-    const users = await readAll('users');
-    const idx = users.findIndex(u => u.id == id);
-    if (idx < 0) return null;
-    users[idx] = { ...users[idx], ...data, id: Number(id) };
-    await writeAll('users', USER_HEADERS, users);
-    return users[idx];
-  },
-  async toggleUserActive(id) {
-    const users = await readAll('users');
-    const idx = users.findIndex(u => u.id == id);
-    if (idx < 0) return null;
-    users[idx].active = !users[idx].active;
-    await writeAll('users', USER_HEADERS, users);
-    return users[idx];
-  },
-
-  // --- Products ---
-  async getAllProducts() {
-    return (await readAll('products')).sort((a, b) => a.id - b.id);
-  },
-  async getProductById(id) {
-    const products = await readAll('products');
-    return products.find(p => p.id == id) || null;
-  },
-  async insertProduct(data) {
-    const product = { id: await nextId('products'), ...data };
-    await appendRow('products', PRODUCT_HEADERS, product);
-    return product;
-  },
-  async updateProduct(id, data) {
-    const products = await readAll('products');
-    const idx = products.findIndex(p => p.id == id);
-    if (idx < 0) return null;
-    products[idx] = { ...products[idx], ...data, id: Number(id) };
-    await writeAll('products', PRODUCT_HEADERS, products);
-    return products[idx];
-  },
-  async updateProductQty(id, quantity, updatedAt) {
-    return this.updateProduct(id, { quantity, updatedAt });
-  },
-  async deleteProduct(id) {
-    const products = await readAll('products');
-    await writeAll('products', PRODUCT_HEADERS, products.filter(p => p.id != id));
-    return true;
-  },
-
-  // --- Transactions ---
-  async getAllTransactions() {
-    return (await readAll('transactions')).sort((a, b) => b.id - a.id);
-  },
-  async insertTransaction(data) {
-    const t = { id: await nextId('transactions'), ...data };
-    await appendRow('transactions', TX_HEADERS, t);
-    return t;
-  },
-
-  // --- Logs ---
-  async getAllLogs() {
-    const logs = await readAll('logs');
-    return logs.reverse().slice(0, 200);
-  },
-  async insertLog(data) {
-    await appendRow('logs', LOG_HEADERS, data);
-    return data;
-  },
-
-  // --- Snapshots ---
-  async getAllSnapshots() {
-    return (await readAll('snapshots')).sort((a, b) => new Date(b.date) - new Date(a.date));
-  },
-  async upsertSnapshot(date, data) {
-    const snaps = await readAll('snapshots');
-    const idx = snaps.findIndex(s => s.date === date);
-    const entry = { date, data: JSON.stringify(data) };
-    if (idx >= 0) snaps[idx] = entry; else snaps.push(entry);
-    await writeAll('snapshots', SNAP_HEADERS, snaps);
-    return { date, data };
-  },
-};
-
-module.exports = { dao, getDb: async () => ({}) };
+// ===== START =====
+app.listen(PORT, () => {
+    console.log(`🏭 RFID Factory server running at http://localhost:${PORT}`);
+});
