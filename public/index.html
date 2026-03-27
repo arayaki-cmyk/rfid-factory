@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="lang.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     /* Hide app layout completely when not authenticated */
     #appLayout:not(.active) { display: none !important; }
@@ -154,13 +155,7 @@
           <div class="nav-item" data-page="userManagement" onclick="navigateTo('userManagement')"><i
               class="fas fa-users-gear"></i> <span data-i18n="nav_usermgmt">จัดการผู้ใช้</span></div>
         </div>
-        <div class="nav-section">
-          <div class="nav-section-title" style="color:rgba(167,139,250,.55);">AI &amp; อัจฉริยะ</div>
-          <div class="nav-item" data-page="aiRestock" onclick="navigateTo('aiRestock')">
-            <i class="fas fa-robot"></i> <span>AI Restock</span>
-            <span class="badge" id="aiAlertBadge" style="display:none;background:linear-gradient(135deg,#8B5CF6,#6366F1);">!</span>
-          </div>
-        </div>
+
       </div>
       <div class="sidebar-footer">
         <div class="user-card">
@@ -650,65 +645,134 @@
 
       <!-- ===== ANALYTICS ===== -->
       <div class="page-content page-view" id="analyticsView">
-        <!-- KPI Cards -->
-        <div class="analytics-kpi-grid" id="analyticsKpiGrid"></div>
 
-        <!-- Charts Row 1: Daily Chart + Category Donut -->
-        <div class="analytics-row">
-          <div class="panel analytics-panel-wide">
-            <div class="panel-header">
-              <h3><i class="fas fa-chart-area text-cyan"></i> <span data-i18n="an_daily_title">เบิกออก vs รับเข้า (14
-                  วัน)</span></h3>
-            </div>
-            <div class="panel-body">
-              <div class="an-daily-chart" id="analyticsDailyChart"></div>
+        <!-- KPI Row -->
+        <div class="an2-kpi-grid" id="analyticsKpiGrid"></div>
+
+        <!-- Row 1: 30-day trend chart (full width) -->
+        <div class="panel an2-panel-full mt-4">
+          <div class="panel-header">
+            <h3><i class="fas fa-chart-line text-cyan"></i> Trend เบิกออก vs รับเข้า (30 วัน)</h3>
+            <div class="an2-period-tabs" id="anPeriodTabs">
+              <button class="an2-tab active" onclick="setAnPeriod(14,this)">14 วัน</button>
+              <button class="an2-tab" onclick="setAnPeriod(30,this)">30 วัน</button>
+              <button class="an2-tab" onclick="setAnPeriod(60,this)">60 วัน</button>
             </div>
           </div>
-          <div class="panel analytics-panel-narrow">
+          <div class="panel-body an2-chart-body">
+            <canvas id="anLineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Row 2: Category donut + Stock health -->
+        <div class="an2-grid-2 mt-4">
+          <div class="panel">
             <div class="panel-header">
-              <h3><i class="fas fa-chart-pie text-purple"></i> <span data-i18n="an_cat_title">สัดส่วนหมวดหมู่</span>
-              </h3>
+              <h3><i class="fas fa-chart-pie text-purple"></i> สัดส่วนตามหมวดหมู่</h3>
+            </div>
+            <div class="panel-body an2-chart-body-sq">
+              <canvas id="anDonutChart"></canvas>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-heart-pulse text-red"></i> สุขภาพสต็อก</h3>
             </div>
             <div class="panel-body">
-              <div class="an-donut-wrap" id="analyticsDonut"></div>
+              <div id="anStockHealth"></div>
             </div>
           </div>
         </div>
 
-        <!-- Charts Row 2: Top Products + User Activity -->
-        <div class="analytics-row">
-          <div class="panel analytics-panel-wide">
+        <!-- Row 3: Top products bar + User activity -->
+        <div class="an2-grid-2 mt-4">
+          <div class="panel">
             <div class="panel-header">
-              <h3><i class="fas fa-trophy text-amber"></i> <span data-i18n="an_top_title">Top 10 สินค้าเบิกมากสุด</span>
-              </h3>
+              <h3><i class="fas fa-trophy text-amber"></i> Top 10 สินค้าเบิกบ่อย</h3>
             </div>
-            <div class="panel-body">
-              <div class="an-top-products" id="analyticsTopProducts"></div>
+            <div class="panel-body an2-chart-body-tall">
+              <canvas id="anBarChart"></canvas>
             </div>
           </div>
-          <div class="panel analytics-panel-narrow">
+          <div class="panel">
             <div class="panel-header">
-              <h3><i class="fas fa-users text-green"></i> <span data-i18n="an_user_title">กิจกรรมตามผู้ใช้</span></h3>
+              <h3><i class="fas fa-users text-green"></i> กิจกรรมตามผู้ใช้</h3>
             </div>
-            <div class="panel-body">
-              <div class="an-user-activity" id="analyticsUserActivity"></div>
+            <div class="panel-body an2-chart-body-tall">
+              <canvas id="anUserChart"></canvas>
             </div>
           </div>
         </div>
 
-        <!-- Charts Row 3: Hourly Heatmap -->
-        <div class="analytics-row">
-          <div class="panel" style="flex:1">
-            <div class="panel-header">
-              <h3><i class="fas fa-clock text-cyan"></i> <span data-i18n="an_hourly_title">ความถี่ตามช่วงเวลา</span>
-              </h3>
-            </div>
-            <div class="panel-body">
-              <div class="an-hourly-heatmap" id="analyticsHourly"></div>
-            </div>
+        <!-- Row 4: Hourly heatmap (full width) -->
+        <div class="panel an2-panel-full mt-4">
+          <div class="panel-header">
+            <h3><i class="fas fa-fire text-amber"></i> Heatmap ความถี่ตามชั่วโมง</h3>
+            <span class="an2-heatmap-legend-wrap" id="anHeatLegend"></span>
+          </div>
+          <div class="panel-body">
+            <div id="anHeatmap" class="an2-heatmap"></div>
+          </div>
+        </div>
+
+        <!-- Row 5: Insights (auto-generated text analysis) -->
+        <div class="panel an2-panel-full mt-4">
+          <div class="panel-header">
+            <h3><i class="fas fa-lightbulb text-amber"></i> Insights อัตโนมัติ</h3>
+          </div>
+          <div class="panel-body">
+            <div id="anInsights" class="an2-insights"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== USER LOG ===== -->
+
+      <div class="page-content page-view" id="userLogView">
+        <div class="panel">
+          <div class="panel-body" style="padding:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>เวลา</th>
+                  <th>ผู้ใช้</th>
+                  <th>บทบาท</th>
+                  <th>การกระทำ</th>
+                  <th>รายละเอียด</th>
+                </tr>
+              </thead>
+              <tbody id="userLogBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
+
+      <!-- ===== USER MANAGEMENT ===== -->
+      <div class="page-content page-view" id="userManagementView">
+        <div class="filter-bar">
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddUserModal()"><i
+              class="fas fa-user-plus"></i> เพิ่มผู้ใช้</button>
+        </div>
+        <div class="panel">
+          <div class="panel-body" style="padding:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ชื่อ</th>
+                  <th>Username</th>
+                  <th>บทบาท</th>
+                  <th>แผนก</th>
+                  <th>สถานะ</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
 
       <!-- ===== USER LOG ===== -->
 
