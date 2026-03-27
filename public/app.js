@@ -1337,7 +1337,7 @@ function renderAnalyticsLineChart() {
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { labels: { color: textColor, font: { family: "'Plus Jakarta Sans','Noto Sans Thai',sans-serif", size: 12 }, boxWidth: 14, padding: 18 } },
@@ -1365,13 +1365,13 @@ function renderAnalyticsDonut() {
   const counts = {};
   transactions.filter(t=>t.type==='out').forEach(t => { const p = products.find(x=>x.name===t.product); const c = p?.category||t.product||'อื่นๆ'; counts[c]=(counts[c]||0)+Number(t.qty||0); });
   if (!Object.keys(counts).length) {
+    // fallback: count by stock qty
     products.forEach(p => { const c = p.category||'อื่นๆ'; counts[c]=(counts[c]||0)+p.quantity; });
   }
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
   if (!entries.length) return;
   const colors = getChartColors(entries.length);
   const { textColor } = chartDefaults();
-  const total = entries.reduce((s,e)=>s+e[1],0);
 
   _anCharts.donut = new Chart(canvas, {
     type: 'doughnut',
@@ -1380,34 +1380,19 @@ function renderAnalyticsDonut() {
       datasets: [{ data: entries.map(e=>e[1]), backgroundColor: colors, borderWidth: 2, borderColor: isDark()?'#160F2A':'#fff', hoverOffset: 6 }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '68%',
+      responsive: true, maintainAspectRatio: true,
+      cutout: '65%',
       plugins: {
-        legend: { display: false }, // legend rendered as HTML below
+        legend: { position: 'bottom', labels: { color: textColor, font: { size: 11 }, padding: 12, boxWidth: 12 } },
         tooltip: {
           backgroundColor: isDark()?'#1E1640':'#fff',
           titleColor: isDark()?'#EDE8FF':'#1A1040',
           bodyColor:  isDark()?'#A89EC8':'#4B3A70',
           borderColor: isDark()?'rgba(139,92,246,.25)':'rgba(109,40,217,.15)',
           borderWidth: 1, cornerRadius: 10,
-          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${(ctx.parsed/total*100).toFixed(1)}%)` }
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${(ctx.parsed/ctx.dataset.data.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)` }
         },
       }
-    }
-  });
-
-  // Render HTML legend below chart
-  const legendEl = document.getElementById('anDonutLegend');
-  if (legendEl) {
-    legendEl.innerHTML = entries.map((e,i) =>
-      `<div class="an2-donut-leg-item">
-        <span class="an2-donut-leg-dot" style="background:${colors[i]}"></span>
-        <span class="an2-donut-leg-name">${e[0]}</span>
-        <span class="an2-donut-leg-pct">${(e[1]/total*100).toFixed(1)}%</span>
-      </div>`
-    ).join('');
-  }
-}
     }
   });
 }
@@ -1545,29 +1530,16 @@ function renderAnalyticsStockHealth() {
   const pctLow   = total ? Math.round(low/total*100) : 0;
   const pctCrit  = total ? Math.round(critical/total*100) : 0;
 
-  // SVG arc math: circumference = 2*pi*r = 314.159 for r=50
-  // stroke-dashoffset=78.54 (=circ/4) rotates start point to 12 o'clock
-  const circ     = 314.159;
-  const dashOk   = (pctOk   / 100) * circ;
-  const dashLow  = (pctLow  / 100) * circ;
-  const dashCrit = (pctCrit / 100) * circ;
-  const offOk    = 78.54;
-  const offLow   = 78.54 - dashOk;
-  const offCrit  = 78.54 - dashOk - dashLow;
-
   el.innerHTML = `
     <div class="an2-health-gauge">
       <div class="an2-gauge-ring">
         <svg viewBox="0 0 120 120" width="120" height="120">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="${isDark()?'rgba(139,92,246,.12)":'rgba(109,40,217,.08)'}" stroke-width="14"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="${isDark()?'rgba(139,92,246,.12)':'rgba(109,40,217,.08)'}" stroke-width="14"/>
           <circle cx="60" cy="60" r="50" fill="none" stroke="#10B981" stroke-width="14"
-            stroke-dasharray="${dashOk} ${circ}" stroke-dashoffset="${offOk}"
+            stroke-dasharray="${pctOk*3.14159} 314.159" stroke-dashoffset="78.54"
             stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/>
           <circle cx="60" cy="60" r="50" fill="none" stroke="#F59E0B" stroke-width="14"
-            stroke-dasharray="${dashLow} ${circ}" stroke-dashoffset="${offLow}"
-            stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/>
-          <circle cx="60" cy="60" r="50" fill="none" stroke="#EF4444" stroke-width="14"
-            stroke-dasharray="${dashCrit} ${circ}" stroke-dashoffset="${offCrit}"
+            stroke-dasharray="${pctLow*3.14159} 314.159" stroke-dashoffset="${78.54 - pctOk*3.14159}"
             stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/>
         </svg>
         <div class="an2-gauge-center">
