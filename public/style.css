@@ -610,3 +610,124 @@ a{color:var(--accent-cyan);cursor:pointer;text-decoration:none;}
 .tp-petals span{position:absolute;font-size:14px;animation:petalFall 4s infinite linear;opacity:.8;}
 .tp-petals span:nth-child(1){left:55%;animation-delay:0s;animation-duration:3.5s;}.tp-petals span:nth-child(2){left:72%;animation-delay:1.2s;animation-duration:4s;}.tp-petals span:nth-child(3){left:85%;animation-delay:2.5s;animation-duration:3s;}
 @keyframes petalFall{0%{transform:translateY(-20px) rotate(0deg);opacity:0;}10%{opacity:.8;}90%{opacity:.6;}100%{transform:translateY(110px) rotate(180deg);opacity:0;}}
+
+/* ===== ANALYTICS v2 — Chart.js ===== */
+
+/* KPI grid */
+.an2-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px; margin-bottom: 0;
+}
+.an2-kpi {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow); transition: all .22s;
+  position: relative; overflow: hidden;
+}
+.an2-kpi::after {
+  content:''; position:absolute; top:0; left:0; width:100%; height:3px;
+  background: var(--ka, var(--g-primary)); border-radius: 3px 3px 0 0;
+}
+.an2-kpi::before {
+  content:''; position:absolute; bottom:-20px; right:-20px;
+  width:70px; height:70px; border-radius:50%;
+  background: var(--kc, #7C3AED); opacity:.07;
+  pointer-events:none;
+}
+.an2-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow2); }
+.an2-kpi-top   { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.an2-kpi-icon  {
+  width:36px; height:36px; border-radius:10px; flex-shrink:0;
+  background: color-mix(in srgb, var(--kc,#7C3AED) 12%, transparent);
+  color: var(--kc, #7C3AED);
+  display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.an2-kpi-label { font-size:11.5px; font-weight:700; color:var(--txt3); text-transform:uppercase; letter-spacing:.4px; }
+.an2-kpi-value { font-size:26px; font-weight:800; letter-spacing:-.8px; line-height:1; color:var(--txt1); }
+.an2-kpi-sub   { font-size:11px; color:var(--txt3); margin-top:4px; }
+.an2-kpi-trend { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700; margin-top:2px; }
+.an2-kpi-trend.up   { color:var(--accent-green); }
+.an2-kpi-trend.down { color:var(--accent-red); }
+
+/* Panel layout */
+.an2-panel-full { width: 100%; }
+.mt-4 { margin-top: 20px; }
+.an2-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media(max-width:900px){ .an2-grid-2{grid-template-columns:1fr;} }
+
+/* Chart container heights */
+.an2-chart-body    { position:relative; height:280px; }
+.an2-chart-body canvas { position:absolute; inset:0; width:100%!important; height:100%!important; }
+.an2-chart-body-sq { position:relative; height:300px; }
+.an2-chart-body-sq canvas { position:absolute; inset:0; width:100%!important; height:100%!important; }
+.an2-chart-body-tall { position:relative; height:320px; }
+.an2-chart-body-tall canvas { position:absolute; inset:0; width:100%!important; height:100%!important; }
+
+/* Period tabs */
+.an2-period-tabs { display:flex; gap:4px; }
+.an2-tab {
+  padding:5px 13px; border-radius:20px; border:1.5px solid var(--border);
+  background:var(--bg2); color:var(--txt2); font-family:var(--font-main);
+  font-size:12px; font-weight:600; cursor:pointer; transition:all .18s;
+}
+.an2-tab:hover { background:var(--p50); border-color:var(--p200); }
+.an2-tab.active { background:var(--g-primary); color:white; border-color:transparent; box-shadow:0 3px 10px rgba(124,58,237,.25); }
+
+/* Heatmap */
+.an2-heatmap {
+  display:grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap:5px;
+}
+@media(max-width:768px){ .an2-heatmap{grid-template-columns:repeat(12,1fr);} }
+.an2-heat-cell {
+  border-radius:6px; padding:6px 2px 4px;
+  text-align:center; cursor:default;
+  transition:transform .15s, filter .15s;
+  min-height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.an2-heat-cell:hover { transform:scale(1.12); filter:brightness(1.2); z-index:2; position:relative; }
+.an2-heat-h { font-size:9px; font-weight:700; color:var(--txt3); }
+.an2-heat-n { font-size:12px; font-weight:800; color:var(--txt1); line-height:1.2; }
+.an2-heatmap-legend-wrap { display:flex; align-items:center; gap:6px; }
+.an2-heat-leg { display:flex; gap:3px; }
+.an2-heat-leg span { width:16px; height:10px; border-radius:3px; display:inline-block; }
+
+/* Stock health gauge */
+.an2-health-gauge { display:flex; justify-content:center; margin-bottom:16px; }
+.an2-gauge-ring { position:relative; display:inline-flex; align-items:center; justify-content:center; }
+.an2-gauge-center { position:absolute; text-align:center; }
+.an2-gauge-pct { font-size:22px; font-weight:800; color:var(--txt1); letter-spacing:-.5px; }
+.an2-gauge-sub { font-size:11px; color:var(--txt3); }
+.an2-health-legend { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.an2-health-item { display:flex; align-items:center; gap:9px; font-size:13px; }
+.an2-health-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.an2-health-lbl { flex:1; color:var(--txt2); font-weight:500; }
+.an2-health-count { font-weight:800; color:var(--txt1); font-family:var(--font-mono); font-size:12px; }
+.an2-health-bar {
+  display:flex; height:8px; border-radius:6px; overflow:hidden; gap:2px;
+}
+.an2-health-bar > div { transition:width .8s cubic-bezier(.34,1.2,.64,1); min-width:3px; }
+
+/* Insights */
+.an2-insights-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:12px;
+}
+.an2-insight-card {
+  display:flex; align-items:flex-start; gap:12px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:14px 16px;
+  transition:all .2s; animation:rowIn .3s ease-out both;
+}
+.an2-insight-card:hover { transform:translateY(-1px); box-shadow:var(--shadow2); }
+.an2-insight-icon {
+  width:36px; height:36px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.an2-insight-text { font-size:13px; color:var(--txt2); line-height:1.6; padding-top:2px; }
+.an2-insight-text strong { color:var(--txt1); }
