@@ -731,3 +731,23 @@ a{color:var(--accent-cyan);cursor:pointer;text-decoration:none;}
 }
 .an2-insight-text { font-size:13px; color:var(--txt2); line-height:1.6; padding-top:2px; }
 .an2-insight-text strong { color:var(--txt1); }
+
+/* ── Analytics donut legend fix ───────────────────────── */
+.an2-donut-wrap { display:flex; flex-direction:column; gap:0; padding:16px 20px 20px; }
+.an2-donut-wrap .an2-chart-body-sq { height:220px; flex-shrink:0; }
+.an2-donut-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  padding-top: 14px; justify-content: center;
+}
+.an2-donut-leg-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--txt2);
+}
+.an2-donut-leg-dot {
+  width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+}
+.an2-donut-leg-name { font-weight: 500; color: var(--txt2); }
+.an2-donut-leg-pct  { font-weight: 700; color: var(--txt1); font-family: var(--font-mono); }
+
+/* ── Analytics stock health panel extra space ─────────── */
+#anStockHealth { padding: 4px 0; }
