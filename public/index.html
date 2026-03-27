@@ -1,1164 +1,388 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="dark">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RFID Factory — Conveyor Belt Inventory System</title>
-  <meta name="description" content="ระบบจัดการสินค้าคลัง RFID สำหรับสายพานโรงงาน — Auto Dispensing v3.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
-  <script src="lang.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    /* Hide app layout completely when not authenticated */
-    #appLayout:not(.active) { display: none !important; }
-  </style>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tome &amp; Tag | RFID Factory Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-dim": "#dfdace",
+              "tertiary-fixed-dim": "#f0c1b9",
+              "outline": "#7e7a71",
+              "surface-container-highest": "#e7e2d7",
+              "on-error-container": "#65000b",
+              "tertiary-dim": "#6d4b45",
+              "inverse-surface": "#0f0e0b",
+              "secondary-fixed-dim": "#c8dcf0",
+              "secondary": "#4e6172",
+              "on-surface-variant": "#625f56",
+              "on-tertiary": "#fff7f6",
+              "primary-dim": "#6a4c43",
+              "tertiary-fixed": "#ffcfc7",
+              "inverse-on-surface": "#a09c96",
+              "on-secondary-fixed": "#324555",
+              "surface-bright": "#fef9f2",
+              "surface-container": "#f2ede4",
+              "on-primary-container": "#65473e",
+              "on-error": "#fff7f6",
+              "outline-variant": "#b6b2a7",
+              "tertiary-container": "#ffcfc7",
+              "secondary-container": "#d6ebff",
+              "surface-variant": "#e7e2d7",
+              "on-background": "#34322b",
+              "primary-fixed-dim": "#efc6b9",
+              "surface-container-low": "#f8f3eb",
+              "surface-tint": "#77584e",
+              "error-container": "#f56965",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed": "#fed3c7",
+              "secondary-fixed": "#d6ebff",
+              "on-tertiary-fixed-variant": "#704d47",
+              "surface-container-high": "#ede8de",
+              "secondary-dim": "#425566",
+              "on-secondary-container": "#445768",
+              "on-primary-fixed": "#51352c",
+              "tertiary": "#7a5650",
+              "on-tertiary-container": "#66443e",
+              "error": "#ac3434",
+              "on-primary": "#fff7f5",
+              "on-surface": "#34322b",
+              "background": "#fef9f2",
+              "surface": "#fef9f2",
+              "on-secondary-fixed-variant": "#4e6172",
+              "on-tertiary-fixed": "#51322d",
+              "inverse-primary": "#fed3c7",
+              "error-dim": "#70030f",
+              "primary-container": "#fed3c7",
+              "on-primary-fixed-variant": "#705147",
+              "on-secondary": "#f6f9ff",
+              "primary": "#77584e"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
 </head>
-
-<body>
-  <!-- Background Animation -->
-  <div class="bg-animation">
-    <div class="orb"></div>
-    <div class="orb"></div>
-    <div class="orb"></div>
-  </div>
-  <div class="particles" id="particles"></div>
-
-  <!-- Toast -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- RFID Hidden Input -->
-  <input type="text" class="rfid-hidden-input" id="rfidHiddenInput" autocomplete="off">
-
-  <!-- RFID Scan Popup (top bar) -->
-  <div class="rfid-scan-popup" id="rfidScanPopup">
-    <div class="rfid-scan-popup-inner">
-      <div class="rfid-scan-popup-icon"><i class="fas fa-satellite-dish"></i></div>
-      <div>
-        <div class="rfid-scan-popup-uid" id="rfidPopupUid">—</div>
-        <div class="rfid-scan-popup-product" id="rfidPopupProduct">รอสแกน...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== LOGIN PAGE ========== -->
-  <div class="auth-container page-view active" id="loginPage">
-    <div class="login-bg-cards">
-      <div class="floating-card fc1"><i class="fas fa-satellite-dish"></i></div>
-      <div class="floating-card fc2"><i class="fas fa-industry"></i></div>
-      <div class="floating-card fc3"><i class="fas fa-conveyor-belt"></i></div>
-      <div class="floating-card fc4"><i class="fas fa-boxes-stacked"></i></div>
-      <div class="floating-card fc5"><i class="fas fa-barcode"></i></div>
-    </div>
-    <div class="auth-card">
-      <div class="logo">
-        <div class="logo-icon-wrap">
-          <div class="logo-icon"><i class="fas fa-industry"></i></div>
-          <div class="logo-ring"></div>
-          <div class="logo-ring r2"></div>
-        </div>
-        <h1 data-i18n="login_title">RFID Factory</h1>
-        <div class="tagline" data-i18n="login_subtitle">Conveyor Belt Inventory System v3.0</div>
-      </div>
-      <form id="loginForm">
-        <div class="form-group">
-          <label><i class="fas fa-user"></i> <span data-i18n="login_username_label">ชื่อผู้ใช้</span></label>
-          <div class="input-wrapper">
-            <input type="text" id="loginEmail" placeholder="ชื่อผู้ใช้งาน" data-i18n-ph="login_username_ph" required
-              autocomplete="off">
-          </div>
-        </div>
-        <div class="form-group">
-          <label><i class="fas fa-lock"></i> <span data-i18n="login_password_label">รหัสผ่าน</span></label>
-          <div class="input-wrapper">
-            <input type="password" id="loginPassword" placeholder="รหัสผ่าน" data-i18n-ph="login_password_ph" required>
-          </div>
-        </div>
-        <div class="form-error" id="loginError"></div>
-        <button type="submit" class="btn btn-primary btn-login">
-          <i class="fas fa-right-to-bracket"></i> <span data-i18n="login_btn">เข้าสู่ระบบ</span>
-          <div class="btn-shine"></div>
-        </button>
-      </form>
-      <div class="auth-footer">
-        <div class="demo-accounts">
-          <p data-i18n="login_demo">🏭 บัญชีทดลองใช้</p>
-          <div class="demo-badges">
-            <span class="demo-badge" onclick="fillLogin('admin','1234')"><i class="fas fa-shield-halved"></i>
-              Admin</span>
-            <span class="demo-badge" onclick="fillLogin('warehouse','1234')"><i class="fas fa-warehouse"></i>
-              คลัง</span>
-            <span class="demo-badge" onclick="fillLogin('staff','1234')"><i class="fas fa-helmet-safety"></i>
-              พนักงาน</span>
-          </div>
-          <div class="pw-hint" data-i18n="login_demo_pw">รหัสผ่านทุกบัญชี: 1234</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== APP LAYOUT ========== -->
-  <div class="app-layout page-view" id="appLayout">
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="brand">
-          <div class="brand-icon"><i class="fas fa-industry"></i></div>
-          <div class="brand-text">
-            <h2>RFID Factory</h2>
-            <span>Conveyor Belt v3.0</span>
-          </div>
-        </div>
-      </div>
-      <div class="sidebar-nav">
-        <!-- Conveyor Status -->
-        <div style="padding: 12px 12px 4px;">
-          <div class="conveyor-status-bar" id="conveyorStatusBar">
-            <div class="conveyor-status-dot" id="conveyorStatusDot"></div>
-            <span id="conveyorStatusText" data-i18n="conveyor_waiting">สายพาน — รอเชื่อมต่อ</span>
-          </div>
-        </div>
-        <div class="nav-section">
-          <div class="nav-section-title" data-i18n="nav_main">เมนูหลัก</div>
-          <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><i
-              class="fas fa-th-large"></i> <span data-i18n="nav_dashboard">แดชบอร์ด</span></div>
-          <div class="nav-item" data-page="products" onclick="navigateTo('products')"><i
-              class="fas fa-boxes-stacked"></i> <span data-i18n="nav_products">สินค้าทั้งหมด</span></div>
-        </div>
-        <div class="nav-section">
-          <div class="nav-section-title" data-i18n="nav_rfid_section">RFID & สายพาน</div>
-          <div class="nav-item" data-page="withdraw" onclick="navigateTo('withdraw')"><i
-              class="fas fa-arrow-right-from-bracket"></i> <span data-i18n="nav_withdraw">เบิกสินค้า</span></div>
-          <div class="nav-item" data-page="receive" onclick="navigateTo('receive')"><i
-              class="fas fa-arrow-right-to-bracket"></i> <span data-i18n="nav_receive">รับสินค้าเข้า</span></div>
-        </div>
-        <div class="nav-section">
-          <div class="nav-section-title" data-i18n="nav_reports">รายงาน</div>
-          <div class="nav-item" data-page="transactions" onclick="navigateTo('transactions')"><i
-              class="fas fa-clock-rotate-left"></i> <span data-i18n="nav_transactions">ประวัติเบิกจ่าย</span> <span
-              class="badge" id="txBadge"></span></div>
-          <div class="nav-item" data-page="history" onclick="navigateTo('history')"><i class="fas fa-database"></i>
-            <span data-i18n="nav_history">ข้อมูลย้อนหลัง</span>
-          </div>
-          <div class="nav-item" data-page="analytics" onclick="navigateTo('analytics')"><i class="fas fa-chart-pie"></i>
-            <span data-i18n="nav_analytics">สรุปภาพรวม</span>
-          </div>
-          <div class="nav-item" data-page="userLog" onclick="navigateTo('userLog')"><i class="fas fa-user-clock"></i>
-            <span data-i18n="nav_userlog">Log ผู้ใช้งาน</span>
-          </div>
-        </div>
-        <div class="nav-section" id="adminSection">
-          <div class="nav-section-title" data-i18n="nav_system">จัดการระบบ</div>
-          <div class="nav-item" data-page="userManagement" onclick="navigateTo('userManagement')"><i
-              class="fas fa-users-gear"></i> <span data-i18n="nav_usermgmt">จัดการผู้ใช้</span></div>
-        </div>
-
-      </div>
-      <div class="sidebar-footer">
-        <div class="user-card">
-          <div class="user-avatar" id="userAvatar">U</div>
-          <div class="user-info">
-            <div class="name" id="userName">User</div>
-            <div class="role" id="userRole">Staff</div>
-          </div>
-          <button class="logout-btn" onclick="logout()" title="ออกจากระบบ"><i
-              class="fas fa-right-from-bracket"></i></button>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="main-content">
-      <div class="topbar">
-        <div class="topbar-left">
-          <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-          <div>
-            <h1 id="pageTitle">แดชบอร์ด</h1>
-            <div class="breadcrumb" id="pageBreadcrumb">หน้าหลัก / ภาพรวม</div>
-          </div>
-        </div>
-        <div class="topbar-right">
-          <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn" title="Switch to English">EN</button>
-          <button class="theme-toggle" onclick="openModal('themePickerModal')" data-i18n-title="topbar_theme"
-            title="เลือกธีม" id="themeToggle">
-            <i class="fas fa-palette" id="themeIcon"></i>
-          </button>
-          <div class="search-box">
-            <input type="text" placeholder="ค้นหาสินค้า..." data-i18n-ph="topbar_search_ph" id="globalSearch"
-              oninput="handleGlobalSearch(this.value)">
-            <i class="fas fa-search"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== DASHBOARD ===== -->
-      <div class="page-content page-view active" id="dashboardView">
-        <div class="stats-grid" id="statsGrid"></div>
-
-        <!-- Conveyor Belt Monitor -->
-        <div class="conveyor-monitor" id="conveyorMonitor">
-          <div class="conveyor-monitor-header">
-            <h3><i class="fas fa-conveyor-belt text-cyan"></i> <span data-i18n="dash_conveyor_title">สายพานลำเลียง —
-                RFID Gate</span></h3>
-            <div class="status-text" id="conveyorMonitorStatus">
-              <div class="dot"></div>
-              <span>กำลังทำงาน</span>
-            </div>
-          </div>
-          <div class="conveyor-belt-area" id="conveyorBeltArea">
-            <div class="belt-track">
-              <div class="rfid-gate" id="rfidGate">
-                <div class="gate-beam"></div>
-              </div>
-            </div>
-          </div>
-          <div class="conveyor-stats" id="conveyorStatsBar">
-            <div class="conveyor-stat">
-              <span class="label" data-i18n="dash_today_out">วันนี้เบิกออก:</span>
-              <span class="val" id="todayOutCount">0</span>
-            </div>
-            <div class="conveyor-stat">
-              <span class="label" data-i18n="dash_today_in">วันนี้รับเข้า:</span>
-              <span class="val" id="todayInCount">0</span>
-            </div>
-            <div class="conveyor-stat">
-              <span class="label" data-i18n="dash_last_scan">สแกนล่าสุด:</span>
-              <span class="val" id="lastScanTime">—</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Scan Feed + Dashboard Panels -->
-        <div class="content-grid">
-          <!-- Live Scan Feed -->
-          <div class="live-feed">
-            <div class="live-feed-header">
-              <h3><i class="fas fa-terminal text-cyan"></i> <span data-i18n="dash_live_feed">Live Scan Feed</span></h3>
-              <div class="live-indicator">
-                <div class="dot"></div> LIVE
-              </div>
-            </div>
-            <div class="live-feed-body" id="liveScanFeed">
-              <div class="feed-empty">
-                <i class="fas fa-satellite-dish"></i>
-                <p>รอสแกน RFID...<br><small>สินค้าที่ผ่านสายพานจะแสดงที่นี่</small></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Recent Activity -->
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-clock-rotate-left"></i> <span data-i18n="dash_recent">กิจกรรมล่าสุด</span></h3>
-              <button class="btn btn-secondary btn-sm" onclick="navigateTo('transactions')"
-                data-i18n="dash_view_all">ดูทั้งหมด</button>
-            </div>
-            <div class="panel-body">
-              <ul class="activity-list" id="dashRecentActivity"></ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="content-grid">
-          <!-- Chart -->
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-chart-bar text-cyan"></i> <span data-i18n="dash_chart_title">กราฟการเบิกสินค้า (7
-                  วัน)</span></h3>
-            </div>
-            <div class="panel-body">
-              <div class="chart-container" id="dashWithdrawChart"></div>
-            </div>
-          </div>
-
-          <!-- Low Stock -->
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-triangle-exclamation text-amber"></i> <span
-                  data-i18n="dash_low_stock_title">สินค้าใกล้หมด</span></h3>
-            </div>
-            <div class="panel-body">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>สินค้า</th>
-                    <th>รหัส</th>
-                    <th>คงเหลือ</th>
-                    <th>สถานะ</th>
-                  </tr>
-                </thead>
-                <tbody id="lowStockBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="content-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-ranking-star text-purple"></i> <span
-                  data-i18n="dash_top_withdraw">สินค้าที่ถูกเบิกบ่อย</span></h3>
-            </div>
-            <div class="panel-body" id="dashTopWithdraw"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== PRODUCTS ===== -->
-      <div class="page-content page-view" id="productsView">
-        <div class="filter-bar">
-          <div class="search-box"><input type="text" placeholder="ค้นหาสินค้า..." data-i18n-ph="prod_search_ph"
-              id="productSearch" oninput="filterProducts()"><i class="fas fa-search"></i></div>
-          <div class="filter-chips" id="categoryFilters">
-            <button class="filter-chip active" onclick="setProductFilter('all', this)">ทั้งหมด</button>
-            <button class="filter-chip" onclick="setProductFilter('electronics', this)">อิเล็กทรอนิกส์</button>
-            <button class="filter-chip" onclick="setProductFilter('mechanical', this)">เครื่องกล</button>
-            <button class="filter-chip" onclick="setProductFilter('material', this)">วัสดุสิ้นเปลือง</button>
-            <button class="filter-chip" onclick="setProductFilter('safety', this)">Safety</button>
-          </div>
-          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddProductModal()"
-            id="btnAddProduct"><i class="fas fa-plus"></i> เพิ่มสินค้า</button>
-        </div>
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>รหัส</th>
-                  <th>สินค้า</th>
-                  <th>หมวดหมู่</th>
-                  <th>ที่เก็บ</th>
-                  <th>คงเหลือ</th>
-                  <th>หน่วย</th>
-                  <th>สถานะ</th>
-                  <th>จัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="productTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== WITHDRAW ===== -->
-      <div class="page-content page-view" id="withdrawView">
-        <div class="content-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
-            </div>
-            <div class="panel-body">
-              <div class="rfid-scanner">
-                <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
-                </div>
-                <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
-                <div class="scanner-id" id="withdrawScannedId"></div>
-              </div>
-            </div>
-          </div>
-          <div class="panel" id="withdrawFormPanel" style="display:none;">
-            <div class="panel-header">
-              <h3><i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก</h3>
-            </div>
-            <div class="panel-body">
-              <div id="withdrawProductInfo"></div>
-              <form id="withdrawForm" onsubmit="return false;"><input type="hidden" id="withdrawProductId">
-                <div class="form-group"><label><i class="fas fa-hashtag"></i> จำนวนที่เบิก</label>
-                  <div class="input-wrapper"><input type="number" id="withdrawQty" min="1" required></div>
-                </div>
-                <div class="form-group"><label><i class="fas fa-user"></i> ผู้เบิก</label>
-                  <div class="input-wrapper"><input type="text" id="withdrawUser" required></div>
-                </div>
-                <div class="form-group"><label><i class="fas fa-comment"></i> เหตุผล (ไม่บังคับ)</label>
-                  <div class="input-wrapper"><input type="text" id="withdrawReason"></div>
-                </div>
-                <button type="submit" class="btn btn-danger" onclick="processWithdraw()"
-                  style="width:100%;padding:16px;font-size:15px;">
-                  <i class="fas fa-arrow-right-from-bracket"></i> ยืนยันเบิกสินค้า
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-        <div class="panel mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-history text-red"></i> รายการเบิกล่าสุด</h3>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>RFID</th>
-                  <th>สินค้า</th>
-                  <th>จำนวน</th>
-                  <th>ผู้เบิก</th>
-                  <th>เหตุผล</th>
-                </tr>
-              </thead>
-              <tbody id="withdrawHistoryBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== RECEIVE ===== -->
-      <div class="page-content page-view" id="receiveView">
-        <div class="content-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-arrow-right-to-bracket text-green"></i> สแกน RFID รับสินค้าเข้า</h3>
-            </div>
-            <div class="panel-body">
-              <div class="rfid-scanner-compact">
-                <div class="scanner-ring-sm receive-mode" id="receiveScannerRing"><i class="fas fa-satellite-dish"></i>
-                </div>
-                <div class="scanner-compact-info">
-                  <div class="scanner-status" id="receiveScannerStatus">แตะบัตร RFID เพื่อรับสินค้าเข้า</div>
-                  <div class="scanner-id" id="receiveScannedId"></div>
-                </div>
-              </div>
-              <div id="receiveExistingPanel"
-                style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border-color);">
-                <div id="receiveProductInfo"></div>
-                <form id="receiveExistingForm" onsubmit="return false;"><input type="hidden" id="receiveProductId">
-                  <div class="form-group"><label><i class="fas fa-hashtag"></i> จำนวนที่รับเข้า</label>
-                    <div class="input-wrapper"><input type="number" id="receiveQty" min="1" required></div>
-                  </div>
-                  <button type="submit" class="btn btn-success" onclick="processReceive()"
-                    style="width:100%;padding:16px;font-size:15px;">
-                    <i class="fas fa-arrow-right-to-bracket"></i> ยืนยันรับสินค้าเข้า
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-          <!-- Add new product from RFID -->
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-plus-circle text-cyan"></i> ผูก RFID กับสินค้าใหม่</h3>
-            </div>
-            <div class="panel-body">
-              <div class="rfid-bind-section">
-                <p><i class="fas fa-satellite-dish"></i> RFID UID ที่สแกนได้:</p>
-                <div class="rfid-bind-uid" id="bindRfidUid">รอสแกนบัตร...</div>
-              </div>
-              <form id="whAddProductForm" onsubmit="return false;">
-                <input type="hidden" id="whNewRfid">
-                <div class="content-grid" style="gap:10px;margin-bottom:0;">
-                  <div class="form-group"><label>รหัสสินค้า (SKU)</label>
-                    <div class="input-wrapper"><input type="text" id="whNewSku" placeholder="เช่น P-001"></div>
-                  </div>
-                  <div class="form-group"><label>ชื่อสินค้า</label>
-                    <div class="input-wrapper"><input type="text" id="whNewName" placeholder="ชื่อสินค้า"></div>
-                  </div>
-                </div>
-                <div class="content-grid" style="gap:10px;margin-bottom:0;">
-                  <div class="form-group"><label>หมวดหมู่</label>
-                    <div class="input-wrapper">
-                      <input type="text" id="whNewCategory" list="categoryListWh" placeholder="เลือกหรือพิมพ์ใหม่">
-                      <datalist id="categoryListWh">
-                        <option value="อิเล็กทรอนิกส์"></option>
-                        <option value="เครื่องกล"></option>
-                        <option value="วัสดุสิ้นเปลือง"></option>
-                        <option value="Safety"></option>
-                      </datalist>
-                    </div>
-                  </div>
-                  <div class="form-group"><label>หน่วย</label>
-                    <div class="input-wrapper"><input type="text" id="whNewUnit" placeholder="ชิ้น, ม้วน, กล่อง">
-                    </div>
-                  </div>
-                </div>
-                <div class="content-grid" style="gap:10px;margin-bottom:0;">
-                  <div class="form-group"><label>ที่เก็บ</label>
-                    <div class="input-wrapper">
-                      <select id="whNewLocation">
-                        <option value="">— เลือกที่เก็บ —</option>
-                        <option value="A-01">A-01</option>
-                        <option value="A-02">A-02</option>
-                        <option value="A-03">A-03</option>
-                        <option value="A-04">A-04</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="form-group"><label>จำนวนเริ่มต้น</label>
-                    <div class="input-wrapper"><input type="number" id="whNewQuantity" min="1"></div>
-                  </div>
-                  <div class="form-group"><label>จุดสั่งซื้อ (Min)</label>
-                    <div class="input-wrapper"><input type="number" id="whNewMinStock" min="0"></div>
-                  </div>
-                </div>
-                <button type="submit" class="btn btn-primary" onclick="addProductFromWarehouse()"
-                  style="width:100%;padding:16px;font-size:15px;margin-top:8px;">
-                  <i class="fas fa-plus"></i> เพิ่มสินค้า + ผูก RFID
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-        <div class="panel mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-history text-green"></i> รายการรับเข้าล่าสุด</h3>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>RFID</th>
-                  <th>สินค้า</th>
-                  <th>SKU</th>
-                  <th>จำนวน</th>
-                  <th>ผู้รับ</th>
-                </tr>
-              </thead>
-              <tbody id="receiveHistoryBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== TRANSACTIONS ===== -->
-      <div class="page-content page-view" id="transactionsView">
-        <div class="filter-bar">
-          <div class="search-box"><input type="text" placeholder="ค้นหา..." id="txSearch"
-              oninput="filterTransactions()"><i class="fas fa-search"></i></div>
-          <div class="filter-chips">
-            <button class="filter-chip active" onclick="setTxFilter('all', this)">ทั้งหมด</button>
-            <button class="filter-chip" onclick="setTxFilter('out', this)">เบิกออก</button>
-            <button class="filter-chip" onclick="setTxFilter('in', this)">รับเข้า</button>
-          </div>
-          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="exportCSV()"><i
-              class="fas fa-download"></i> ส่งออก CSV</button>
-        </div>
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>ประเภท</th>
-                  <th>RFID UID</th>
-                  <th>สินค้า</th>
-                  <th>จำนวน</th>
-                  <th>ผู้ทำรายการ</th>
-                  <th>หมายเหตุ</th>
-                </tr>
-              </thead>
-              <tbody id="txTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== HISTORY (ข้อมูลย้อนหลัง) ===== -->
-      <div class="page-content page-view" id="historyView">
-        <!-- Date Range Filter Bar -->
-        <div class="filter-bar history-filter-bar">
-          <div class="date-range-bar">
-            <div class="date-input-group">
-              <label><i class="fas fa-calendar"></i> จาก</label>
-              <input type="date" id="historyDateFrom" onchange="renderHistory()">
-            </div>
-            <span class="date-separator">→</span>
-            <div class="date-input-group">
-              <label><i class="fas fa-calendar-check"></i> ถึง</label>
-              <input type="date" id="historyDateTo" onchange="renderHistory()">
-            </div>
-          </div>
-          <div class="filter-chips">
-            <button class="filter-chip active" onclick="setHistoryFilter('all', this)">ทั้งหมด</button>
-            <button class="filter-chip" onclick="setHistoryFilter('out', this)">เบิกออก</button>
-            <button class="filter-chip" onclick="setHistoryFilter('in', this)">รับเข้า</button>
-          </div>
-          <div class="search-box"><input type="text" placeholder="ค้นหาสินค้า..." id="historySearch"
-              oninput="renderHistory()"><i class="fas fa-search"></i></div>
-          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="exportFilteredCSV()"><i
-              class="fas fa-download"></i> ส่งออก CSV</button>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="history-summary-grid" id="historySummaryGrid"></div>
-
-        <!-- Daily Chart -->
-        <div class="panel mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-chart-column text-cyan"></i> กราฟเปรียบเทียบรายวัน</h3>
-          </div>
-          <div class="panel-body">
-            <div class="history-chart" id="historyDailyChart"></div>
-          </div>
-        </div>
-
-        <!-- Transaction Table -->
-        <div class="panel mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-list-ul text-purple"></i> รายการธุรกรรมย้อนหลัง</h3>
-            <span class="history-result-count" id="historyResultCount"></span>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>วันที่</th>
-                  <th>เวลา</th>
-                  <th>ประเภท</th>
-                  <th>RFID</th>
-                  <th>สินค้า</th>
-                  <th>จำนวน</th>
-                  <th>ผู้ทำรายการ</th>
-                  <th>หมายเหตุ</th>
-                </tr>
-              </thead>
-              <tbody id="historyTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Stock Snapshot Timeline -->
-        <div class="panel mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-timeline text-green"></i> สต็อกสินค้าย้อนหลัง (Snapshot)</h3>
-            <button class="btn btn-secondary btn-sm" onclick="saveStockSnapshot()"><i class="fas fa-camera"></i>
-              บันทึก Snapshot ตอนนี้</button>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>วันที่</th>
-                  <th>สินค้า</th>
-                  <th>รหัส</th>
-                  <th>คงเหลือ ณ วันนั้น</th>
-                  <th>เทียบปัจจุบัน</th>
-                </tr>
-              </thead>
-              <tbody id="snapshotTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== ANALYTICS ===== -->
-      <div class="page-content page-view" id="analyticsView">
-
-        <!-- KPI Row -->
-        <div class="an2-kpi-grid" id="analyticsKpiGrid"></div>
-
-        <!-- Row 1: 30-day trend chart (full width) -->
-        <div class="panel an2-panel-full mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-chart-line text-cyan"></i> Trend เบิกออก vs รับเข้า (30 วัน)</h3>
-            <div class="an2-period-tabs" id="anPeriodTabs">
-              <button class="an2-tab active" onclick="setAnPeriod(14,this)">14 วัน</button>
-              <button class="an2-tab" onclick="setAnPeriod(30,this)">30 วัน</button>
-              <button class="an2-tab" onclick="setAnPeriod(60,this)">60 วัน</button>
-            </div>
-          </div>
-          <div class="panel-body an2-chart-body">
-            <canvas id="anLineChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Row 2: Category donut + Stock health -->
-        <div class="an2-grid-2 mt-4">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-chart-pie text-purple"></i> สัดส่วนตามหมวดหมู่</h3>
-            </div>
-            <div class="panel-body an2-chart-body-sq">
-              <canvas id="anDonutChart"></canvas>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-heart-pulse text-red"></i> สุขภาพสต็อก</h3>
-            </div>
-            <div class="panel-body">
-              <div id="anStockHealth"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 3: Top products bar + User activity -->
-        <div class="an2-grid-2 mt-4">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-trophy text-amber"></i> Top 10 สินค้าเบิกบ่อย</h3>
-            </div>
-            <div class="panel-body an2-chart-body-tall">
-              <canvas id="anBarChart"></canvas>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-users text-green"></i> กิจกรรมตามผู้ใช้</h3>
-            </div>
-            <div class="panel-body an2-chart-body-tall">
-              <canvas id="anUserChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 4: Hourly heatmap (full width) -->
-        <div class="panel an2-panel-full mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-fire text-amber"></i> Heatmap ความถี่ตามชั่วโมง</h3>
-            <span class="an2-heatmap-legend-wrap" id="anHeatLegend"></span>
-          </div>
-          <div class="panel-body">
-            <div id="anHeatmap" class="an2-heatmap"></div>
-          </div>
-        </div>
-
-        <!-- Row 5: Insights (auto-generated text analysis) -->
-        <div class="panel an2-panel-full mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-lightbulb text-amber"></i> Insights อัตโนมัติ</h3>
-          </div>
-          <div class="panel-body">
-            <div id="anInsights" class="an2-insights"></div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ===== USER LOG ===== -->
-
-      <div class="page-content page-view" id="userLogView">
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>ผู้ใช้</th>
-                  <th>บทบาท</th>
-                  <th>การกระทำ</th>
-                  <th>รายละเอียด</th>
-                </tr>
-              </thead>
-              <tbody id="userLogBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== USER MANAGEMENT ===== -->
-      <div class="page-content page-view" id="userManagementView">
-        <div class="filter-bar">
-          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddUserModal()"><i
-              class="fas fa-user-plus"></i> เพิ่มผู้ใช้</button>
-        </div>
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ชื่อ</th>
-                  <th>Username</th>
-                  <th>บทบาท</th>
-                  <th>แผนก</th>
-                  <th>สถานะ</th>
-                  <th>จัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="userTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-
-      <!-- ===== USER LOG ===== -->
-
-      <div class="page-content page-view" id="userLogView">
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>ผู้ใช้</th>
-                  <th>บทบาท</th>
-                  <th>การกระทำ</th>
-                  <th>รายละเอียด</th>
-                </tr>
-              </thead>
-              <tbody id="userLogBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== USER MANAGEMENT ===== -->
-      <div class="page-content page-view" id="userManagementView">
-        <div class="filter-bar">
-          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddUserModal()"><i
-              class="fas fa-user-plus"></i> เพิ่มผู้ใช้</button>
-        </div>
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ชื่อ</th>
-                  <th>Username</th>
-                  <th>บทบาท</th>
-                  <th>แผนก</th>
-                  <th>สถานะ</th>
-                  <th>จัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="userTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== AI RESTOCK PREDICTION ===== -->
-      <div class="page-content page-view" id="aiRestockView">
-
-        <!-- Hero header -->
-        <div class="ai-hero">
-          <div class="ai-hero-bg"></div>
-          <div class="ai-hero-content">
-            <div class="ai-hero-left">
-              <div class="ai-hero-icon">
-                <i class="fas fa-robot"></i>
-                <div class="ai-hero-ring"></div>
-                <div class="ai-hero-ring r2"></div>
-              </div>
-              <div class="ai-hero-text">
-                <h2 class="ai-hero-title">AI Restock Prediction</h2>
-                <p class="ai-hero-sub">Claude AI วิเคราะห์ pattern การเบิกสินค้า และแนะนำแผน restock ที่เหมาะสม</p>
-                <div class="ai-hero-tags">
-                  <span class="ai-tag"><i class="fas fa-chart-line"></i> Pattern Analysis</span>
-                  <span class="ai-tag"><i class="fas fa-brain"></i> Claude AI</span>
-                  <span class="ai-tag"><i class="fas fa-boxes-stacked"></i> Inventory Insight</span>
-                </div>
-              </div>
-            </div>
-            <button class="btn btn-primary ai-analyze-btn" id="aiAnalyzeBtn" onclick="runAiRestock()">
-              <i class="fas fa-sparkles"></i>
-              <span>วิเคราะห์ตอนนี้</span>
-              <div class="btn-shine"></div>
-            </button>
-          </div>
-        </div>
-
-        <!-- Empty state (default) -->
-        <div id="aiRestockEmpty" class="ai-idle-card">
-          <div class="ai-idle-grid">
-            <div class="ai-idle-step">
-              <div class="ai-idle-icon-wrap" style="background:rgba(124,58,237,.10);color:var(--p600);">
-                <i class="fas fa-database"></i>
-              </div>
-              <div class="ai-idle-step-title">รวบรวมข้อมูล</div>
-              <div class="ai-idle-step-desc">ดึงข้อมูลสต็อกและประวัติการเบิก 30 วัน</div>
-            </div>
-            <div class="ai-idle-arrow"><i class="fas fa-chevron-right"></i></div>
-            <div class="ai-idle-step">
-              <div class="ai-idle-icon-wrap" style="background:rgba(99,102,241,.10);color:var(--accent-indigo);">
-                <i class="fas fa-chart-line"></i>
-              </div>
-              <div class="ai-idle-step-title">วิเคราะห์ Pattern</div>
-              <div class="ai-idle-step-desc">คำนวณ trend และคาดการณ์ระยะเวลาสต็อก</div>
-            </div>
-            <div class="ai-idle-arrow"><i class="fas fa-chevron-right"></i></div>
-            <div class="ai-idle-step">
-              <div class="ai-idle-icon-wrap" style="background:rgba(16,185,129,.10);color:var(--accent-green);">
-                <i class="fas fa-lightbulb"></i>
-              </div>
-              <div class="ai-idle-step-title">แนะนำ Restock</div>
-              <div class="ai-idle-step-desc">รับคำแนะนำที่แม่นยำจาก Claude AI</div>
-            </div>
-          </div>
-          <p class="ai-idle-hint">กด <strong>วิเคราะห์ตอนนี้</strong> เพื่อเริ่มต้น</p>
-        </div>
-
-        <!-- Loading state -->
-        <div id="aiRestockLoading" style="display:none;">
-          <div class="ai-loading-card">
-            <div class="ai-loading-orb">
-              <div class="ai-orb-inner"><i class="fas fa-robot"></i></div>
-            </div>
-            <div class="ai-loading-title">Claude กำลังวิเคราะห์<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>
-            <div class="ai-loading-steps" id="aiLoadingSteps"></div>
-          </div>
-        </div>
-
-        <!-- Results -->
-        <div id="aiRestockResults" style="display:none;">
-
-          <!-- Summary KPI cards -->
-          <div class="ai-summary-grid" id="aiSummaryGrid"></div>
-
-          <!-- Recommendations + Analysis -->
-          <div class="ai-main-grid">
-            <div class="panel">
-              <div class="panel-header">
-                <h3><i class="fas fa-list-check text-cyan"></i> รายการแนะนำ Restock</h3>
-                <div class="ai-last-updated" id="aiLastUpdated"></div>
-              </div>
-              <div id="aiRecommendList" style="padding:0;"></div>
-            </div>
-            <div class="panel">
-              <div class="panel-header">
-                <h3><i class="fas fa-brain text-purple"></i> การวิเคราะห์จาก Claude</h3>
-              </div>
-              <div class="panel-body">
-                <div class="ai-analysis-text" id="aiAnalysisText"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Trend chart -->
-          <div class="panel mt-4">
-            <div class="panel-header">
-              <h3><i class="fas fa-chart-line text-amber"></i> Trend การเบิก 14 วัน (Top 5 สินค้า)</h3>
-            </div>
-            <div class="panel-body">
-              <div id="aiTrendChart" class="ai-trend-chart"></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- ===== MODALS ===== -->
-  <!-- Add/Edit Product -->
-  <div class="modal-overlay" id="addProductModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="productModalTitle"><i class="fas fa-plus text-cyan"></i> เพิ่มสินค้าใหม่</h3>
-        <button class="modal-close" onclick="closeModal('addProductModal')"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="productForm" onsubmit="return false;">
-          <input type="hidden" id="editProductId">
-          <div class="form-group"><label>รหัสสินค้า (SKU)</label>
-            <div class="input-wrapper"><input type="text" id="prodSku" required></div>
-          </div>
-          <div class="form-group"><label>ชื่อสินค้า</label>
-            <div class="input-wrapper"><input type="text" id="prodName" required></div>
-          </div>
-          <div class="form-group"><label>RFID UID</label>
-            <div class="input-wrapper"><input type="text" id="prodRfid"></div>
-          </div>
-          <div class="form-group"><label>หมวดหมู่</label>
-            <div class="input-wrapper">
-              <input type="text" id="prodCategory" list="categoryList" placeholder="เลือกหรือพิมพ์หมวดหมู่ใหม่"
-                required>
-              <datalist id="categoryList">
-                <option value="อิเล็กทรอนิกส์"></option>
-                <option value="เครื่องกล"></option>
-                <option value="วัสดุสิ้นเปลือง"></option>
-                <option value="Safety"></option>
-              </datalist>
-            </div>
-          </div>
-          <div class="form-group"><label>หน่วย</label>
-            <div class="input-wrapper"><input type="text" id="prodUnit" required></div>
-          </div>
-          <div class="form-group"><label>ที่เก็บ</label>
-            <div class="input-wrapper">
-              <select id="prodLocation">
-                <option value="">— เลือกที่เก็บ —</option>
-                <option value="A-01">A-01</option>
-                <option value="A-02">A-02</option>
-                <option value="A-03">A-03</option>
-                <option value="A-04">A-04</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group"><label>จำนวนคงเหลือ</label>
-            <div class="input-wrapper"><input type="number" id="prodQuantity" min="0" required></div>
-          </div>
-          <div class="form-group"><label>จุดสั่งซื้อ (Min Stock)</label>
-            <div class="input-wrapper"><input type="number" id="prodMinStock" min="0" required></div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="saveProduct()"><i class="fas fa-save"></i> บันทึก</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add/Edit User -->
-  <div class="modal-overlay" id="addUserModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3><i class="fas fa-user-plus text-cyan"></i> เพิ่ม/แก้ไขผู้ใช้</h3>
-        <button class="modal-close" onclick="closeModal('addUserModal')"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="userForm" onsubmit="return false;">
-          <input type="hidden" id="editUserId">
-          <div class="form-group"><label>ชื่อ-สกุล</label>
-            <div class="input-wrapper"><input type="text" id="newUserName" required></div>
-          </div>
-          <div class="form-group"><label>Username</label>
-            <div class="input-wrapper"><input type="text" id="newUserUsername" required></div>
-          </div>
-          <div class="form-group"><label>รหัสผ่าน</label>
-            <div class="input-wrapper"><input type="password" id="newUserPassword" required></div>
-          </div>
-          <div class="form-group"><label>บทบาท</label>
-            <div class="input-wrapper">
-              <select id="newUserRole" required>
-                <option value="">— เลือก —</option>
-                <option value="admin">ผู้ดูแลระบบ</option>
-                <option value="warehouse">เจ้าหน้าที่คลัง</option>
-                <option value="staff">ผู้เบิกสินค้า</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group"><label>แผนก</label>
-            <div class="input-wrapper">
-              <select id="newUserDept">
-                <option value="">— เลือก —</option>
-                <option value="warehouse">คลังสินค้า</option>
-                <option value="production">ฝ่ายผลิต</option>
-                <option value="logistics">โลจิสติกส์</option>
-                <option value="it">ไอที</option>
-                <option value="general">ทั่วไป</option>
-              </select>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('addUserModal')">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="saveUser()"><i class="fas fa-save"></i> บันทึก</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Theme Picker Modal -->
-  <div class="modal-overlay" id="themePickerModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3><i class="fas fa-palette text-cyan"></i> เลือกธีม</h3>
-        <button class="modal-close" onclick="closeModal('themePickerModal')"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="theme-picker-grid">
-
-          <!-- DARK -->
-          <div class="theme-option" data-theme-value="dark" onclick="selectTheme('dark')">
-            <div class="theme-preview theme-preview-dark">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-stars">
-                <span></span><span></span><span></span><span></span><span></span>
-              </div>
-            </div>
-            <div class="theme-option-label">Dark</div>
-            <div class="theme-option-desc">Deep Space มืดสนิท</div>
-          </div>
-
-          <!-- LIGHT -->
-          <div class="theme-option" data-theme-value="light" onclick="selectTheme('light')">
-            <div class="theme-preview theme-preview-light">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-sun"></div>
-            </div>
-            <div class="theme-option-label">Light</div>
-            <div class="theme-option-desc">สว่างสดใส</div>
-          </div>
-
-          <!-- CREAM -->
-          <div class="theme-option" data-theme-value="cream" onclick="selectTheme('cream')">
-            <div class="theme-preview theme-preview-cream">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-leaf">🍂</div>
-            </div>
-            <div class="theme-option-label">Cream</div>
-            <div class="theme-option-desc">อบอุ่น นุ่มนวล</div>
-          </div>
-
-          <!-- OCEAN -->
-          <div class="theme-option" data-theme-value="ocean" onclick="selectTheme('ocean')">
-            <div class="theme-preview theme-preview-ocean">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-wave">
-                <svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                  <path d="M0,10 C15,0 25,20 40,10 C55,0 65,20 80,10 L80,20 L0,20 Z" fill="rgba(56,189,248,0.35)"/>
-                  <path d="M0,14 C12,6 28,22 44,13 C58,5 68,18 80,13 L80,20 L0,20 Z" fill="rgba(56,189,248,0.20)"/>
-                </svg>
-              </div>
-            </div>
-            <div class="theme-option-label">Ocean</div>
-            <div class="theme-option-desc">ทะเลลึก</div>
-          </div>
-
-          <!-- SAKURA -->
-          <div class="theme-option" data-theme-value="sakura" onclick="selectTheme('sakura')">
-            <div class="theme-preview theme-preview-sakura">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-petals">
-                <span>🌸</span><span>🌸</span><span>🌸</span>
-              </div>
-            </div>
-            <div class="theme-option-label">Sakura</div>
-            <div class="theme-option-desc">ดอกไม้ หวานหวาน</div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-
-</html>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-64 z-50 bg-[#f5eee6] flex flex-col py-6 space-y-2 font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-wide">
+<div class="px-6 mb-8">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+</div>
+<div>
+<h2 class="text-lg font-black text-[#77584e] leading-none">The Collection</h2>
+<p class="text-[10px] text-on-surface-variant opacity-70">Factory ID: RFID-08</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-2 space-y-1">
+<a class="flex items-center space-x-3 bg-[#fef9f2] text-[#77584e] rounded-full px-4 py-3 shadow-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 text-[#4e6172] px-4 py-3 hover:text-[#77584e] hover:bg-[#fef9f2]/50 rounded-full transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="flex items-center space-x-3 text-[#4e6172] px-4 py-3 hover:text-[#77584e] hover:bg-[#fef9f2]/50 rounded-full transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center space-x-3 text-[#4e6172] px-4 py-3 hover:text-[#77584e] hover:bg-[#fef9f2]/50 rounded-full transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-6 py-4 bg-primary-container/20 rounded-3xl mx-4 mb-6">
+<button class="w-full bg-primary text-on-primary rounded-full py-3 font-bold flex items-center justify-center space-x-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>New Scan</span>
+</button>
+</div>
+<div class="px-2 border-t border-outline-variant/10 pt-4">
+<a class="flex items-center space-x-3 text-[#4e6172] px-4 py-2 hover:text-[#77584e] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center space-x-3 text-error px-4 py-2 hover:bg-error/5 rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen p-8 space-y-8">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center mb-12">
+<div>
+<h1 class="text-4xl font-extrabold tracking-tighter text-primary">Tome &amp; Tag</h1>
+<p class="text-secondary font-medium mt-1">Industrial RFID Oversight &amp; Archival Journal</p>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative">
+<input class="bg-surface-container-highest border-none rounded-full py-3 px-6 pl-12 focus:ring-2 ring-primary-container text-sm w-72 transition-all" placeholder="Search Archives..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+</div>
+<button class="p-3 bg-surface-container-low rounded-full text-secondary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<img class="w-12 h-12 rounded-full border-2 border-primary-container object-cover shadow-md" data-alt="Close-up portrait of a professional warehouse manager with a friendly expression in a modern, sunlit office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQVVw5RB_M68ob-LGWe2F_vbR8tECBFJlcUthm0dlK6FPiA2B7Ajz59FcLtHrGATD20iLqye7P_Iz2Pn_Xe-OrwqdHlWSM9hwiWz9tlXa0iWaFJozD4W4OTbqqgkRV3R4UEI8wypQWeiarbrAYJe08MNYTys1gr0hA9kxe-TGH0u9pSV2rV6bIGwbbJ2gqosOVNpVGICi9j8mc2CfVV7YhrTPElayUyMimN3wKG-ytNoLaMi2QBPb208_V_h1kgexZAZGMwiAL9mg9"/>
+</div>
+</header>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Total Products -->
+<div class="bg-secondary-container/40 p-6 rounded-lg shadow-sm flex flex-col justify-between h-40 group hover:shadow-xl transition-shadow duration-500">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary text-3xl" data-icon="shelves">shelves</span>
+<span class="text-[10px] font-bold tracking-widest uppercase opacity-60">Inventory</span>
+</div>
+<div>
+<span class="text-4xl font-extrabold text-on-secondary-container">12,482</span>
+<p class="text-sm font-medium text-secondary">Total Products</p>
+</div>
+</div>
+<!-- Low Stock -->
+<div class="bg-tertiary-container/40 p-6 rounded-lg shadow-sm flex flex-col justify-between h-40 group hover:shadow-xl transition-shadow duration-500">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary text-3xl" data-icon="warning">warning</span>
+<span class="text-[10px] font-bold tracking-widest uppercase opacity-60">Alerts</span>
+</div>
+<div>
+<span class="text-4xl font-extrabold text-on-tertiary-container">24</span>
+<p class="text-sm font-medium text-tertiary">Low Stock</p>
+</div>
+</div>
+<!-- Today's Out -->
+<div class="bg-error-container/20 p-6 rounded-lg shadow-sm flex flex-col justify-between h-40 group hover:shadow-xl transition-shadow duration-500">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error text-3xl" data-icon="arrow_outward">arrow_outward</span>
+<span class="text-[10px] font-bold tracking-widest uppercase opacity-60">Withdrawals</span>
+</div>
+<div>
+<span class="text-4xl font-extrabold text-error">452</span>
+<p class="text-sm font-medium text-error">Today's Out</p>
+</div>
+</div>
+<!-- Today's In -->
+<div class="bg-primary-container/40 p-6 rounded-lg shadow-sm flex flex-col justify-between h-40 group hover:shadow-xl transition-shadow duration-500">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="download">download</span>
+<span class="text-[10px] font-bold tracking-widest uppercase opacity-60">Arrivals</span>
+</div>
+<div>
+<span class="text-4xl font-extrabold text-on-primary-container">618</span>
+<p class="text-sm font-medium text-primary">Today's In</p>
+</div>
+</div>
+</div>
+<!-- Middle Section: Visualizer & Live Feed -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Conveyor Belt Monitor -->
+<div class="lg:col-span-8 bg-surface-container-low rounded-lg p-8 relative overflow-hidden h-[400px]">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="conveyor_belt">conveyor_belt</span>
+                        Gate 04 Monitor
+                    </h3>
+<div class="flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-xs font-bold text-primary uppercase tracking-tighter">Live Stream</span>
+</div>
+</div>
+<!-- Stylized Visualization Area -->
+<div class="relative h-64 w-full flex items-center justify-center">
+<!-- RFID Gate Arch -->
+<div class="absolute inset-0 flex items-center justify-center opacity-10">
+<div class="w-96 h-80 border-[24px] border-primary rounded-t-[4rem]"></div>
+</div>
+<!-- Moving Items Container -->
+<div class="flex space-x-12 items-center">
+<!-- Passed Item -->
+<div class="w-32 h-44 bg-surface-container-highest rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm opacity-40 -translate-x-12">
+<span class="material-symbols-outlined text-primary opacity-50 mb-2" data-icon="inventory">inventory</span>
+<div class="w-16 h-1 bg-primary/20 rounded-full"></div>
+</div>
+<!-- Current Item Under Gate -->
+<div class="w-40 h-56 bg-white rounded-3xl flex flex-col items-center justify-center p-6 shadow-2xl ring-4 ring-primary/20 relative z-10 scale-110">
+<div class="absolute -top-4 bg-primary text-on-primary text-[10px] font-bold px-3 py-1 rounded-full">TAG: RFID-7732</div>
+<span class="material-symbols-outlined text-primary text-5xl mb-4" data-icon="package_2">package_2</span>
+<div class="w-full space-y-2">
+<div class="h-2 bg-secondary/10 rounded-full"></div>
+<div class="h-2 bg-secondary/10 rounded-full w-3/4"></div>
+</div>
+<div class="mt-6 flex gap-1">
+<div class="w-2 h-2 rounded-full bg-primary animate-ping"></div>
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<div class="w-2 h-2 rounded-full bg-primary/20"></div>
+</div>
+</div>
+<!-- Incoming Item -->
+<div class="w-32 h-44 bg-surface-container-highest rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm translate-x-12">
+<span class="material-symbols-outlined text-primary/40 mb-2" data-icon="inventory">inventory</span>
+<div class="w-16 h-1 bg-primary/10 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Floor Line -->
+<div class="absolute bottom-12 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent"></div>
+</div>
+<!-- Live Scan Feed (Terminal Styled) -->
+<div class="lg:col-span-4 bg-[#2d2a24] text-[#fef9f2] rounded-lg p-6 font-mono text-xs overflow-hidden flex flex-col">
+<div class="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
+<span class="uppercase tracking-widest font-bold opacity-60">System Log</span>
+<div class="flex gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-error/80"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-amber-400/80"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+</div>
+</div>
+<div class="space-y-3 opacity-90 overflow-y-auto max-h-[300px] scrollbar-hide">
+<div class="flex gap-3">
+<span class="text-primary-fixed opacity-60">[14:22:01]</span>
+<span class="text-secondary-fixed">SCAN_SUCCESS: RFID-7732 identified as "Vintage Oak Crate"</span>
+</div>
+<div class="flex gap-3">
+<span class="text-primary-fixed opacity-60">[14:21:58]</span>
+<span class="text-secondary-fixed">TAG_DETECTED: Signal strength -42dBm</span>
+</div>
+<div class="flex gap-3">
+<span class="text-primary-fixed opacity-60">[14:20:15]</span>
+<span class="text-error">WARN: High traffic density at Gate 04</span>
+</div>
+<div class="flex gap-3">
+<span class="text-primary-fixed opacity-60">[14:18:44]</span>
+<span class="text-secondary-fixed">GATE_INIT: System diagnostic clear. Archival mode ON.</span>
+</div>
+<div class="flex gap-3">
+<span class="text-primary-fixed opacity-60">[14:15:22]</span>
+<span class="text-secondary-fixed">SCAN_SUCCESS: RFID-6610 identified as "Leather Binding Adhesive"</span>
+</div>
+<div class="flex gap-3">
+<span class="text-primary-fixed opacity-60">[14:12:09]</span>
+<span class="text-tertiary-fixed">INFO: Daily backup to Cloud Archive complete.</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-white/5 flex items-center gap-2">
+<span class="w-1.5 h-4 bg-primary rounded-full animate-pulse"></span>
+<span class="opacity-40 italic">Listening for RFID pings...</span>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Recent & Trends -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Recent Activity -->
+<div class="bg-surface-container-lowest p-8 rounded-lg shadow-sm border border-outline-variant/5">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-bold text-on-surface">Recent Activity</h3>
+<button class="text-sm font-bold text-primary hover:underline">View Ledger</button>
+</div>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-secondary-container/30 rounded-full flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Bulk Inbound: Art History Books</p>
+<p class="text-xs text-secondary">Warehouse Section 4B • 10 mins ago</p>
+</div>
+</div>
+<span class="bg-secondary-fixed px-3 py-1 rounded-full text-[10px] font-black text-on-secondary-fixed uppercase tracking-tighter">In Transit</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-tertiary-container/30 rounded-full flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Inventory Correction: RFID-2291</p>
+<p class="text-xs text-secondary">Admin Override • 45 mins ago</p>
+</div>
+</div>
+<span class="bg-tertiary-fixed px-3 py-1 rounded-full text-[10px] font-black text-on-tertiary-fixed uppercase tracking-tighter">Flagged</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-primary-container/30 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Fulfilled: Order #99218</p>
+<p class="text-xs text-secondary">Gate 02 • 1.5 hours ago</p>
+</div>
+</div>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">Completed</span>
+</div>
+</div>
+</div>
+<!-- Withdrawal Trend (Bar Chart) -->
+<div class="bg-surface-container-low p-8 rounded-lg">
+<div class="flex justify-between items-center mb-10">
+<h3 class="text-xl font-bold text-primary">Withdrawal Trend</h3>
+<div class="flex bg-white/50 rounded-full p-1 shadow-inner">
+<button class="px-4 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary shadow-sm">Weekly</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-bold text-secondary">Monthly</button>
+</div>
+</div>
+<div class="flex items-end justify-between h-48 px-4">
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-primary/20 rounded-full h-24 hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] font-black text-secondary/60">MON</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-primary/20 rounded-full h-32 hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] font-black text-secondary/60">TUE</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-primary rounded-full h-44 shadow-lg shadow-primary/20"></div>
+<span class="text-[10px] font-black text-primary">WED</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-primary/20 rounded-full h-28 hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] font-black text-secondary/60">THU</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-primary/20 rounded-full h-36 hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] font-black text-secondary/60">FRI</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-secondary-container rounded-full h-16 hover:opacity-80 transition-opacity"></div>
+<span class="text-[10px] font-black text-secondary/60">SAT</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-10 bg-secondary-container rounded-full h-12 hover:opacity-80 transition-opacity"></div>
+<span class="text-[10px] font-black text-secondary/60">SUN</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual Floating Action Button -->
+<button class="fixed bottom-10 right-10 w-16 h-16 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group z-50">
+<span class="material-symbols-outlined text-3xl" data-icon="barcode_scanner" style="font-variation-settings: 'FILL' 1;">barcode_scanner</span>
+<span class="absolute right-20 bg-primary text-on-primary px-4 py-2 rounded-full text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">Quick RFID Ping</span>
+</button>
+</body></html>
