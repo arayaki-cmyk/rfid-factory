@@ -132,8 +132,15 @@ async function loadData() {
     // Flatten snapshot format: API returns [{date, data:[...]}, ...] → flat array
     stockSnapshots = snaps.flatMap(s => (s.data || []).map(d => ({ ...d, date: s.date })));
   } catch (e) {
-    console.warn('API not available, using empty data:', e.message);
-    products = []; transactions = []; users = [...DEFAULT_USERS]; userLog = []; stockSnapshots = [];
+    console.warn('API load failed, keeping existing data:', e.message);
+    // Only set defaults if truly first load (no data yet)
+    if (!products.length && !transactions.length) {
+      products = []; transactions = []; users = [...DEFAULT_USERS]; userLog = []; stockSnapshots = [];
+    }
+    // Show subtle warning toast only if we had data before (unexpected failure)
+    else {
+      showToast('warning', '⚠️ ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังใช้ข้อมูลเดิม');
+    }
   }
   migrateLegacyCategoryKeys();
   recalcNextIds();
@@ -274,7 +281,7 @@ function startAutoRefresh() {
     }
     updateTxBadge();
     updateTodayStats();
-  }, 30000); // every 30 seconds
+  }, 120000); // every 2 minutes (Google Sheets rate limit)
 }
 
 // ===== NAV =====
@@ -427,11 +434,7 @@ function showRfidPopup(uid) {
   popup.classList.add('show');
   setTimeout(() => popup.classList.remove('show'), 3000);
 }
-function findByRfid(rfid) {
-  // Compare as strings to handle RFID like '0003182354' which db may load as number
-  const uid = String(rfid).trim();
-  return products.find(p => String(p.rfid).trim() === uid);
-}
+function findByRfid(rfid) { return products.find(p => p.rfid === rfid); }
 
 // ===== CONVEYOR BELT ANIMATION =====
 function animateConveyor(uid) {
@@ -826,7 +829,7 @@ async function addProductFromWarehouse() {
     quantity: parseInt(document.getElementById('whNewQuantity').value) || 0, minStock: parseInt(document.getElementById('whNewMinStock').value) || 0
   };
   if (!d.rfid || !d.sku || !d.name || !d.category || !d.unit || !d.quantity) { showToast('error', T('msg_fill_all')); return; }
-  if (products.find(p => String(p.rfid).trim() === String(d.rfid).trim())) { showToast('error', T('msg_rfid_dup')); return; }
+  if (products.find(p => p.rfid === d.rfid)) { showToast('error', T('msg_rfid_dup')); return; }
   try {
     const now = getNow();
     const prodResult = await api('POST', '/products', { ...d, updatedAt: now });
