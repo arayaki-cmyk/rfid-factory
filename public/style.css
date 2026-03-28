@@ -678,3 +678,58 @@ tr:hover td {
 
 .an2-heat-leg{display:flex;gap:3px;}
 .an2-heat-leg span{width:16px;height:10px;border-radius:3px;display:inline-block;}
+
+/* =========================================
+   ปรับปรุงการจัดวางหน้าข้อมูลย้อนหลัง (History)
+   ========================================= */
+
+/* 1. จัดการแถวของ Filter และ Search ให้แยกซ้าย-ขวาอย่างสมดุล */
+.hf-row-bottom {
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 2. ปรับช่องค้นหาไม่ให้ยืดเต็มพื้นที่จนล้นจอ */
+.history-search {
+    flex: none; /* ยกเลิกการใช้ flex: 1 เดิม */
+    width: 320px;
+    margin-left: auto; /* ดันช่องค้นหาไปชิดขวา */
+}
+.history-search input {
+    width: 100%;
+}
+
+/* 3. ปรับตารางข้อมูลให้ดูง่ายขึ้นและทำ Sticky Header (เลื่อนลงแล้วหัวตารางไม่หาย) */
+#historyView .panel-body[style*="overflow-x: auto"] {
+    max-height: 500px; /* จำกัดความสูงตารางและให้ Scroll ได้ */
+    overflow-y: auto;
+}
+
+.history-table th, .snapshot-table th {
+    position: sticky;
+    top: 0;
+    background: #F8FAFC; /* ใช้สีพื้นหลังทึบกันตัวอักษรซ้อนทับกัน */
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* เพิ่มเงาบางๆ แยกหัวตารางให้ชัดเจน */
+}
+
+/* 4. เพิ่มระยะห่างในส่วนเลือกวันที่ */
+.hf-date-group {
+    gap: 15px;
+}
+
+/* 5. Responsive สำหรับหน้าจอมือถือ (จอเล็ก) */
+@media (max-width: 768px) {
+    .history-search {
+        width: 100%;
+        margin-left: 0;
+    }
+    .hf-row-bottom {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    .filter-chips {
+        justify-content: center;
+    }
+}
