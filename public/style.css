@@ -731,3 +731,13 @@ a{color:var(--accent-cyan);cursor:pointer;text-decoration:none;}
 }
 .an2-insight-text { font-size:13px; color:var(--txt2); line-height:1.6; padding-top:2px; }
 .an2-insight-text strong { color:var(--txt1); }
+
+/* ===== LOGIN LOADING STATE ===== */
+.btn-login:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.btn-login:disabled .btn-shine {
+  display: none;
+}
