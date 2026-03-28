@@ -192,13 +192,13 @@
 
       <!-- ===== DASHBOARD ===== -->
       <div class="page-content page-view active" id="dashboardView">
+        <!-- Stats Grid - 4 cards in a row -->
         <div class="stats-grid" id="statsGrid"></div>
 
-        <!-- Conveyor Belt Monitor -->
+        <!-- Conveyor Belt Monitor - Full width -->
         <div class="conveyor-monitor" id="conveyorMonitor">
           <div class="conveyor-monitor-header">
-            <h3><i class="fas fa-conveyor-belt text-cyan"></i> <span data-i18n="dash_conveyor_title">สายพานลำเลียง —
-                RFID Gate</span></h3>
+            <h3><i class="fas fa-conveyor-belt text-cyan"></i> <span data-i18n="dash_conveyor_title">สายพานลำเลียง — RFID Gate</span></h3>
             <div class="status-text" id="conveyorMonitorStatus">
               <div class="dot"></div>
               <span>กำลังทำงาน</span>
@@ -227,8 +227,8 @@
           </div>
         </div>
 
-        <!-- Live Scan Feed + Dashboard Panels -->
-        <div class="content-grid">
+        <!-- 2-Column Layout: Live Feed + Recent Activity -->
+        <div class="dashboard-two-col">
           <!-- Live Scan Feed -->
           <div class="live-feed">
             <div class="live-feed-header">
@@ -249,8 +249,7 @@
           <div class="panel">
             <div class="panel-header">
               <h3><i class="fas fa-clock-rotate-left"></i> <span data-i18n="dash_recent">กิจกรรมล่าสุด</span></h3>
-              <button class="btn btn-secondary btn-sm" onclick="navigateTo('transactions')"
-                data-i18n="dash_view_all">ดูทั้งหมด</button>
+              <button class="btn btn-secondary btn-sm" onclick="navigateTo('transactions')" data-i18n="dash_view_all">ดูทั้งหมด</button>
             </div>
             <div class="panel-body">
               <ul class="activity-list" id="dashRecentActivity"></ul>
@@ -258,12 +257,12 @@
           </div>
         </div>
 
-        <div class="content-grid">
+        <!-- 2-Column Layout: Chart + Low Stock -->
+        <div class="dashboard-two-col">
           <!-- Chart -->
           <div class="panel">
             <div class="panel-header">
-              <h3><i class="fas fa-chart-bar text-cyan"></i> <span data-i18n="dash_chart_title">กราฟการเบิกสินค้า (7
-                  วัน)</span></h3>
+              <h3><i class="fas fa-chart-bar text-cyan"></i> <span data-i18n="dash_chart_title">กราฟการเบิกสินค้า (7 วัน)</span></h3>
             </div>
             <div class="panel-body">
               <div class="chart-container" id="dashWithdrawChart"></div>
@@ -273,18 +272,12 @@
           <!-- Low Stock -->
           <div class="panel">
             <div class="panel-header">
-              <h3><i class="fas fa-triangle-exclamation text-amber"></i> <span
-                  data-i18n="dash_low_stock_title">สินค้าใกล้หมด</span></h3>
+              <h3><i class="fas fa-triangle-exclamation text-amber"></i> <span data-i18n="dash_low_stock_title">สินค้าใกล้หมด</span></h3>
             </div>
             <div class="panel-body">
               <table class="data-table">
                 <thead>
-                  <tr>
-                    <th>สินค้า</th>
-                    <th>รหัส</th>
-                    <th>คงเหลือ</th>
-                    <th>สถานะ</th>
-                   </tr>
+                  <tr><th>สินค้า</th><th>รหัส</th><th>คงเหลือ</th><th>สถานะ</th></tr>
                 </thead>
                 <tbody id="lowStockBody"></tbody>
                </table>
@@ -292,14 +285,12 @@
           </div>
         </div>
 
-        <div class="content-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-ranking-star text-purple"></i> <span
-                  data-i18n="dash_top_withdraw">สินค้าที่ถูกเบิกบ่อย</span></h3>
-            </div>
-            <div class="panel-body" id="dashTopWithdraw"></div>
+        <!-- Top Withdraw - Full width -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3><i class="fas fa-ranking-star text-purple"></i> <span data-i18n="dash_top_withdraw">สินค้าที่ถูกเบิกบ่อย</span></h3>
           </div>
+          <div class="panel-body" id="dashTopWithdraw"></div>
         </div>
       </div>
 
@@ -318,19 +309,10 @@
           <div class="panel-body" style="padding:0;">
             <table class="data-table">
               <thead>
-                <tr>
-                  <th>รหัส</th>
-                  <th>สินค้า</th>
-                  <th>หมวดหมู่</th>
-                  <th>ที่เก็บ</th>
-                  <th>คงเหลือ</th>
-                  <th>หน่วย</th>
-                  <th>สถานะ</th>
-                  <th>จัดการ</th>
-                 </tr>
+                <tr><th>รหัส</th><th>สินค้า</th><th>หมวดหมู่</th><th>ที่เก็บ</th><th>คงเหลือ</th><th>หน่วย</th><th>สถานะ</th><th>จัดการ</th></tr>
               </thead>
               <tbody id="productTableBody"></tbody>
-             </table>
+            </table>
           </div>
         </div>
       </div>
@@ -381,18 +363,9 @@
           </div>
           <div class="panel-body" style="padding:0;">
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>RFID</th>
-                  <th>สินค้า</th>
-                  <th>จำนวน</th>
-                  <th>ผู้เบิก</th>
-                  <th>เหตุผล</th>
-                 </tr>
-              </thead>
+              <thead><tr><th>เวลา</th><th>RFID</th><th>สินค้า</th><th>จำนวน</th><th>ผู้เบิก</th><th>เหตุผล</th></tr></thead>
               <tbody id="withdrawHistoryBody"></tbody>
-             </table>
+            </table>
           </div>
         </div>
       </div>
@@ -498,18 +471,9 @@
           </div>
           <div class="panel-body" style="padding:0;">
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>RFID</th>
-                  <th>สินค้า</th>
-                  <th>SKU</th>
-                  <th>จำนวน</th>
-                  <th>ผู้รับ</th>
-                 </tr>
-              </thead>
+              <thead><tr><th>เวลา</th><th>RFID</th><th>สินค้า</th><th>SKU</th><th>จำนวน</th><th>ผู้รับ</th></tr></thead>
               <tbody id="receiveHistoryBody"></tbody>
-             </table>
+            </table>
           </div>
         </div>
       </div>
@@ -530,19 +494,9 @@
         <div class="panel">
           <div class="panel-body" style="padding:0;">
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>ประเภท</th>
-                  <th>RFID UID</th>
-                  <th>สินค้า</th>
-                  <th>จำนวน</th>
-                  <th>ผู้ทำรายการ</th>
-                  <th>หมายเหตุ</th>
-                 </tr>
-              </thead>
+              <thead><tr><th>เวลา</th><th>ประเภท</th><th>RFID UID</th><th>สินค้า</th><th>จำนวน</th><th>ผู้ทำรายการ</th><th>หมายเหตุ</th></tr></thead>
               <tbody id="txTableBody"></tbody>
-             </table>
+            </table>
           </div>
         </div>
       </div>
@@ -550,34 +504,34 @@
       <!-- ===== HISTORY (ข้อมูลย้อนหลัง) ===== -->
       <div class="page-content page-view" id="historyView">
         <!-- Date Range Filter Bar -->
-        <div class="filter-bar history-filter-bar">
+        <div class="history-filter-section">
           <div class="date-range-bar">
             <div class="date-input-group">
-              <label><i class="fas fa-calendar"></i> จาก</label>
+              <label><i class="fas fa-calendar"></i> ตั้งแต่วันที่</label>
               <input type="date" id="historyDateFrom" onchange="renderHistory()">
             </div>
-            <span class="date-separator">→</span>
             <div class="date-input-group">
-              <label><i class="fas fa-calendar-check"></i> ถึง</label>
+              <label><i class="fas fa-calendar-check"></i> ถึงวันที่</label>
               <input type="date" id="historyDateTo" onchange="renderHistory()">
             </div>
+            <div class="filter-chips">
+              <button class="filter-chip active" onclick="setHistoryFilter('all', this)">ทั้งหมด</button>
+              <button class="filter-chip" onclick="setHistoryFilter('out', this)">เบิกออก</button>
+              <button class="filter-chip" onclick="setHistoryFilter('in', this)">รับเข้า</button>
+            </div>
+            <div class="search-box history-search">
+              <input type="text" placeholder="ค้นหาสินค้า, RFID, ผู้ใช้..." id="historySearch" oninput="renderHistory()">
+              <i class="fas fa-search"></i>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()"><i class="fas fa-download"></i> ส่งออก CSV</button>
           </div>
-          <div class="filter-chips">
-            <button class="filter-chip active" onclick="setHistoryFilter('all', this)">ทั้งหมด</button>
-            <button class="filter-chip" onclick="setHistoryFilter('out', this)">เบิกออก</button>
-            <button class="filter-chip" onclick="setHistoryFilter('in', this)">รับเข้า</button>
-          </div>
-          <div class="search-box"><input type="text" placeholder="ค้นหาสินค้า..." id="historySearch"
-              oninput="renderHistory()"><i class="fas fa-search"></i></div>
-          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="exportFilteredCSV()"><i
-              class="fas fa-download"></i> ส่งออก CSV</button>
         </div>
 
-        <!-- Summary Cards -->
+        <!-- Summary Cards - 4 cards in a row -->
         <div class="history-summary-grid" id="historySummaryGrid"></div>
 
-        <!-- Daily Chart -->
-        <div class="panel mt-4">
+        <!-- Daily Chart - Full width -->
+        <div class="panel">
           <div class="panel-header">
             <h3><i class="fas fa-chart-column text-cyan"></i> กราฟเปรียบเทียบรายวัน</h3>
           </div>
@@ -586,51 +540,35 @@
           </div>
         </div>
 
-        <!-- Transaction Table -->
-        <div class="panel mt-4">
+        <!-- Transaction Table - Full width -->
+        <div class="panel">
           <div class="panel-header">
             <h3><i class="fas fa-list-ul text-purple"></i> รายการธุรกรรมย้อนหลัง</h3>
             <span class="history-result-count" id="historyResultCount"></span>
           </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
+          <div class="panel-body" style="padding:0; overflow-x: auto;">
+            <table class="data-table history-table">
               <thead>
-                <tr>
-                  <th>วันที่</th>
-                  <th>เวลา</th>
-                  <th>ประเภท</th>
-                  <th>RFID</th>
-                  <th>สินค้า</th>
-                  <th>จำนวน</th>
-                  <th>ผู้ทำรายการ</th>
-                  <th>หมายเหตุ</th>
-                 </tr>
+                <tr><th>วันที่</th><th>เวลา</th><th>ประเภท</th><th>RFID</th><th>สินค้า</th><th>จำนวน</th><th>ผู้ทำรายการ</th><th>หมายเหตุ</th></tr>
               </thead>
               <tbody id="historyTableBody"></tbody>
-             </table>
+            </table>
           </div>
         </div>
 
-        <!-- Stock Snapshot Timeline -->
-        <div class="panel mt-4">
+        <!-- Stock Snapshot Timeline - Full width -->
+        <div class="panel">
           <div class="panel-header">
             <h3><i class="fas fa-timeline text-green"></i> สต็อกสินค้าย้อนหลัง (Snapshot)</h3>
-            <button class="btn btn-secondary btn-sm" onclick="saveStockSnapshot()"><i class="fas fa-camera"></i>
-              บันทึก Snapshot ตอนนี้</button>
+            <button class="btn btn-secondary btn-sm" onclick="saveStockSnapshot()"><i class="fas fa-camera"></i> บันทึก Snapshot ตอนนี้</button>
           </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
+          <div class="panel-body" style="padding:0; overflow-x: auto;">
+            <table class="data-table snapshot-table">
               <thead>
-                <tr>
-                  <th>วันที่</th>
-                  <th>สินค้า</th>
-                  <th>รหัส</th>
-                  <th>คงเหลือ ณ วันนั้น</th>
-                  <th>เทียบปัจจุบัน</th>
-                 </tr>
+                <tr><th>วันที่</th><th>สินค้า</th><th>รหัส</th><th>คงเหลือ ณ วันนั้น</th><th>เทียบปัจจุบัน</th></tr>
               </thead>
               <tbody id="snapshotTableBody"></tbody>
-             </table>
+            </table>
           </div>
         </div>
       </div>
@@ -725,16 +663,10 @@
           <div class="panel-body" style="padding:0;">
             <table class="data-table">
               <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>ผู้ใช้</th>
-                  <th>บทบาท</th>
-                  <th>การกระทำ</th>
-                  <th>รายละเอียด</th>
-                 </tr>
+                <tr><th>เวลา</th><th>ผู้ใช้</th><th>บทบาท</th><th>การกระทำ</th><th>รายละเอียด</th></tr>
               </thead>
               <tbody id="userLogBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
@@ -749,17 +681,10 @@
           <div class="panel-body" style="padding:0;">
             <table class="data-table">
               <thead>
-                <tr>
-                  <th>ชื่อ</th>
-                  <th>Username</th>
-                  <th>บทบาท</th>
-                  <th>แผนก</th>
-                  <th>สถานะ</th>
-                  <th>จัดการ</th>
-                 </tr>
+                <tr><th>ชื่อ</th><th>Username</th><th>บทบาท</th><th>แผนก</th><th>สถานะ</th><th>จัดการ</th></tr>
               </thead>
               <tbody id="userTableBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
