@@ -505,23 +505,25 @@
       <div class="page-content page-view" id="historyView">
         <!-- Date Range Filter Bar -->
         <div class="history-filter-section">
-          <div class="history-filter-row history-filter-top">
-            <div class="history-filter-left">
+          <!-- Row 1: Date range + Export button -->
+          <div class="hf-row hf-row-top">
+            <div class="hf-date-group">
               <div class="date-input-group">
                 <label><i class="fas fa-calendar"></i> ตั้งแต่วันที่</label>
                 <input type="date" id="historyDateFrom" onchange="renderHistory()">
               </div>
-              <span class="date-range-sep"><i class="fas fa-arrow-right"></i></span>
+              <span class="hf-date-sep"><i class="fas fa-arrow-right"></i></span>
               <div class="date-input-group">
                 <label><i class="fas fa-calendar-check"></i> ถึงวันที่</label>
                 <input type="date" id="historyDateTo" onchange="renderHistory()">
               </div>
             </div>
-            <div class="history-filter-right">
-              <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()"><i class="fas fa-download"></i> ส่งออก CSV</button>
-            </div>
+            <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()">
+              <i class="fas fa-download"></i> ส่งออก CSV
+            </button>
           </div>
-          <div class="history-filter-row history-filter-bottom">
+          <!-- Row 2: Filter chips + Search -->
+          <div class="hf-row hf-row-bottom">
             <div class="filter-chips">
               <button class="filter-chip active" onclick="setHistoryFilter('all', this)">ทั้งหมด</button>
               <button class="filter-chip" onclick="setHistoryFilter('out', this)">เบิกออก</button>
