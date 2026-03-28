@@ -203,22 +203,34 @@ async function handleLogin(e) {
   const btn = e.target.querySelector('button[type="submit"]');
   const u = document.getElementById('loginEmail').value.trim();
   const p = document.getElementById('loginPassword').value;
+  
   // Prevent double-submit
   if (btn.disabled) return;
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>กำลังเข้าสู่ระบบ...</span>';
+  
   try {
     const user = await api('POST', '/auth/login', { username: u, password: p });
     currentUser = user;
     localStorage.setItem(DB.session, JSON.stringify(user));
     addLog('เข้าสู่ระบบ', `${user.name} (${roleLabel[user.role]})`);
+    
+    // ✅ เพิ่มการแจ้งเตือนเมื่อเข้าสู่ระบบสำเร็จ
+    showToast('success', `เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับ ${user.name}`);
+    
+    // ✅ รีเซ็ตปุ่มกลับเป็นเหมือนเดิม (ป้องกันปุ่มค้างเวลา Logout ออกมา)
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> <span data-i18n="login_btn">เข้าสู่ระบบ</span><div class="btn-shine"></div>';
+    
     enterApp();
   } catch (err) {
-    showFormError('loginError', T('login_error'));
+    // แจ้งเตือนเมื่อรหัสผิด
+    showFormError('loginError', err.message || T('login_error'));
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> <span data-i18n="login_btn">เข้าสู่ระบบ</span><div class="btn-shine"></div>';
   }
 }
+
 function fillLogin(u, p) { document.getElementById('loginEmail').value = u; document.getElementById('loginPassword').value = p; }
 function checkSession() {
   const s = JSON.parse(localStorage.getItem(DB.session) || 'null');
@@ -233,14 +245,19 @@ function logout() {
   // Reset all live state
   liveFeedEntries = [];
   currentPage = 'dashboard';
+  
   // Stop auto-refresh
   if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
   showPage('loginPage');
   document.getElementById('appLayout').classList.remove('active');
+  
   // Reset login form
   document.getElementById('loginForm').reset();
   const errEl = document.getElementById('loginError');
-  if (errEl) errEl.classList.remove('show');
+  if (errEl) {
+    errEl.classList.remove('show');
+    errEl.textContent = ''; // ✅ เคลียร์ข้อความ error ที่อาจค้างอยู่
+  }
 }
 async function enterApp() {
   await loadData(false); // show error only on first load
@@ -964,7 +981,17 @@ function showToast(type, msg) {
   t.innerHTML = `<i class="fas ${icons[type] || 'fa-info-circle'}"></i>${msg}`;
   c.appendChild(t); setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 4000);
 }
-function showFormError(id, msg) { const el = document.getElementById(id); if (el) { el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000); } }
+function showFormError(id, msg) { 
+  const el = document.getElementById(id); 
+  if (el) { 
+    el.textContent = msg; 
+    el.classList.add('show'); 
+    setTimeout(() => { 
+      el.classList.remove('show'); 
+      el.textContent = ''; // ✅ เคลียร์ข้อความทิ้งเมื่อครบ 3 วินาที
+    }, 3000); 
+  } 
+}
 
 // =========================================================
 // HISTORY PAGE — ข้อมูลย้อนหลัง
