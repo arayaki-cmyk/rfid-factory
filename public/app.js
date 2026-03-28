@@ -439,28 +439,32 @@ function animateConveyor(uid) {
   const gate = document.getElementById('rfidGate');
   if (!area || !gate) return;
 
-  // Flash the RFID gate
+  // Flash the RFID gate beam
   gate.classList.add('scanning');
-  setTimeout(() => gate.classList.remove('scanning'), 1500);
+  setTimeout(() => gate.classList.remove('scanning'), 1200);
 
-  // Create a belt item
+  // Create belt item with product icon
   const p = findByRfid(uid);
+  const icon = p ? (catMap[p.category]?.icon || 'fa-box') : 'fa-question';
   const item = document.createElement('div');
   item.className = 'belt-item';
-  item.innerHTML = `<i class="fas ${p ? (catMap[p.category]?.icon || 'fa-box') : 'fa-question'}"></i>`;
+  item.innerHTML = `<i class="fas ${icon}"></i>`;
   item.title = p ? p.name : `RFID: ${uid}`;
 
-  // Position inside belt track
   const track = area.querySelector('.belt-track');
   if (track) {
     track.appendChild(item);
-    // Remove after animation
+    // Flash scanned color when passing gate (midpoint ~1.5s into 3s animation)
+    setTimeout(() => item.classList.add('scanned'), 1400);
     item.addEventListener('animationend', () => item.remove());
   }
 
   // Update last scan time
   const lastScan = document.getElementById('lastScanTime');
   if (lastScan) lastScan.textContent = fmtTime(getNow());
+  
+  // Also refresh today stats
+  updateTodayStats();
 }
 
 // ===== LIVE SCAN FEED =====
@@ -560,14 +564,16 @@ function renderRecentActivity() {
   }
   el.innerHTML = recent.map(t => {
     const ic = t.type === 'in' ? 'fa-arrow-right-to-bracket' : t.type === 'out' ? 'fa-arrow-right-from-bracket' : 'fa-satellite-dish';
-    const typeLabel = t.type === 'in' ? 'รับเข้า' : 'เบิกออก';
+    const typeLabel = t.type === 'in' ? T('tx_type_in') : T('tx_type_out');
+    const typeClass = t.type === 'in' ? 'in-type' : 'out-type';
+    const [date, time] = (t.time || '').split(' ');
     return `<li class="activity-item">
       <div class="activity-icon ${t.type}"><i class="fas ${ic}"></i></div>
       <div class="activity-details">
         <strong>${escapeHtml(t.product || '-')}</strong>
-        <small>${typeLabel} ${t.qty} ${t.unit || 'ชิ้น'}</small>
+        <small><span class="status ${typeClass}" style="font-size:10px;padding:2px 7px;">${typeLabel}</span> ${t.qty} ${t.unit || 'ชิ้น'} · ${t.user || ''}</small>
       </div>
-      <div class="activity-time">${fmtTime(t.time)}</div>
+      <div class="activity-time">${date ? date.slice(5) : ''} ${time ? time.slice(0,5) : ''}</div>
     </li>`;
   }).join('');
 }
@@ -578,11 +584,20 @@ function renderWithdrawChart() {
   const days = [];
   for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d.toISOString().slice(0, 10)); }
   const data = days.map(day => {
-    const count = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
-    return { day: day.slice(5), count };
+    const outCount = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
+    const inCount  = transactions.filter(t => t.type === 'in'  && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
+    return { day: day.slice(5), outCount, inCount };
   });
-  const max = Math.max(...data.map(d => d.count), 1);
-  c.innerHTML = data.map(d => `<div class="chart-bar-group"><div class="chart-bar-label"><span>${d.day}</span><span>${d.count}</span></div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.count / max * 100}%;background:var(--gradient-danger);"></div></div></div>`).join('');
+  const max = Math.max(...data.map(d => Math.max(d.outCount, d.inCount)), 1);
+  c.innerHTML = data.map(d => `
+    <div class="chart-bar-group">
+      <div class="chart-bar-label"><span>${d.day}</span><span style="color:var(--accent-red)">${d.outCount || ''}</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.outCount/max*100}%;background:linear-gradient(90deg,#EF4444,#F87171);"></div></div>
+        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.inCount/max*100}%;background:linear-gradient(90deg,#22C55E,#4ADE80);"></div></div>
+      </div>
+      <span style="font-size:11px;color:var(--accent-green);font-weight:600;width:28px;text-align:right;">${d.inCount || ''}</span>
+    </div>`).join('');
 }
 
 function renderLowStock() {
