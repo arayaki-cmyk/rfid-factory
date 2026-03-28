@@ -505,7 +505,7 @@
       <div class="page-content page-view" id="historyView">
         <!-- Date Range Filter Bar -->
         <div class="history-filter-section">
-          <!-- Row 1: Date range + Export button -->
+          <!-- แถว 1: วันที่ + ปุ่ม Export -->
           <div class="hf-row hf-row-top">
             <div class="hf-date-group">
               <div class="date-input-group">
@@ -518,11 +518,9 @@
                 <input type="date" id="historyDateTo" onchange="renderHistory()">
               </div>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()">
-              <i class="fas fa-download"></i> ส่งออก CSV
-            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()"><i class="fas fa-download"></i> ส่งออก CSV</button>
           </div>
-          <!-- Row 2: Filter chips + Search -->
+          <!-- แถว 2: Filter chips + Search -->
           <div class="hf-row hf-row-bottom">
             <div class="filter-chips">
               <button class="filter-chip active" onclick="setHistoryFilter('all', this)">ทั้งหมด</button>
