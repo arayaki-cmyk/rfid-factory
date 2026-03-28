@@ -43,6 +43,56 @@ function getCatInfo(cat) {
 const roleLabel = { admin: 'ผู้ดูแลระบบ', warehouse: 'เจ้าหน้าที่คลัง', staff: 'ผู้เบิกสินค้า' };
 const deptLabel = { warehouse: 'คลังสินค้า', production: 'ฝ่ายผลิต', logistics: 'โลจิสติกส์', it: 'ไอที', general: 'ทั่วไป' };
 
+// ─── Permission Matrix ───────────────────────────────────────────────────────
+// Define exactly what each role can do. Check with can(action) anywhere in code.
+const PERMISSIONS = {
+  admin: {
+    pages:        ['dashboard','products','withdraw','receive','transactions','history','analytics','userLog','userManagement'],
+    products:     { view: true,  add: true,  edit: true,  delete: true  },
+    withdraw:     { perform: true },
+    receive:      { perform: true },
+    transactions: { view: true,  export: true },
+    history:      { view: true,  export: true },
+    analytics:    { view: true },
+    users:        { view: true,  add: true,  edit: true,  toggleActive: true },
+    userLog:      { view: true },
+    settings:     { theme: true, language: true },
+  },
+  warehouse: {
+    pages:        ['dashboard','products','withdraw','receive','transactions','history','analytics','userLog'],
+    products:     { view: true,  add: true,  edit: true,  delete: false },
+    withdraw:     { perform: true },
+    receive:      { perform: true },
+    transactions: { view: true,  export: true },
+    history:      { view: true,  export: true },
+    analytics:    { view: true },
+    users:        { view: false, add: false, edit: false, toggleActive: false },
+    userLog:      { view: true },
+    settings:     { theme: true, language: true },
+  },
+  staff: {
+    pages:        ['dashboard','withdraw','transactions'],
+    products:     { view: false, add: false, edit: false, delete: false },
+    withdraw:     { perform: true },
+    receive:      { perform: false },
+    transactions: { view: true,  export: false },
+    history:      { view: false, export: false },
+    analytics:    { view: false },
+    users:        { view: false, add: false, edit: false, toggleActive: false },
+    userLog:      { view: false },
+    settings:     { theme: true, language: true },
+  },
+};
+
+function can(resource, action) {
+  const role = currentUser?.role || 'staff';
+  const perms = PERMISSIONS[role];
+  if (!perms) return false;
+  if (resource === 'page') return (perms.pages || []).includes(action);
+  return !!(perms[resource]?.[action]);
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 let products = [], transactions = [], users = [], userLog = [], currentUser = null;
 let scanHistory = [], curProdFilter = 'all', curTxFilter = 'all', curHistoryFilter = 'all';
 let stockSnapshots = [];
@@ -280,10 +330,34 @@ function updateUserDisplay() {
   document.getElementById('userAvatar').textContent = currentUser.name.charAt(0);
 }
 function applyRoles() {
-  const r = currentUser?.role;
-  document.getElementById('adminSection').style.display = r === 'admin' ? '' : 'none';
+  const role = currentUser?.role || 'staff';
+  const allowed = PERMISSIONS[role]?.pages || [];
+
+  // Show/hide nav items based on allowed pages
+  document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+    const page = el.dataset.page;
+    el.style.display = allowed.includes(page) ? '' : 'none';
+  });
+
+  // Admin-only nav section (user management)
+  const adminSection = document.getElementById('adminSection');
+  if (adminSection) adminSection.style.display = can('users', 'view') ? '' : 'none';
+
+  // Product add button
   const addBtn = document.getElementById('btnAddProduct');
-  if (addBtn) addBtn.style.display = (r === 'admin' || r === 'warehouse') ? '' : 'none';
+  if (addBtn) addBtn.style.display = can('products', 'add') ? '' : 'none';
+
+  // Export buttons
+  document.querySelectorAll('.btn-export, [onclick*="exportCSV"], [onclick*="exportData"]').forEach(el => {
+    el.style.display = can('transactions', 'export') ? '' : 'none';
+  });
+
+  // Role badge color on topbar
+  const badge = document.getElementById('userRole');
+  if (badge) {
+    badge.className = 'role-pill role-' + role;
+    badge.textContent = getRoleLabel(role);
+  }
 }
 
 // ===== AUTO-REFRESH =====
@@ -322,6 +396,10 @@ function showPage(id) {
   if (el) el.classList.add('active');
 }
 function navigateTo(page) {
+  if (!can('page', page)) {
+    showToast('warning', `คุณไม่มีสิทธิ์เข้าถึงหน้านี้`);
+    return;
+  }
   currentPage = page;
   document.querySelectorAll('.page-content').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -724,6 +802,8 @@ function editProduct(id) {
 }
 async function saveProduct() {
   const id = document.getElementById('editProductId').value;
+  if (id && !can('products', 'edit'))   { showToast('error', 'ไม่มีสิทธิ์แก้ไขสินค้า'); return; }
+  if (!id && !can('products', 'add'))   { showToast('error', 'ไม่มีสิทธิ์เพิ่มสินค้า'); return; }
   const d = {
     sku: document.getElementById('prodSku').value.trim(), name: document.getElementById('prodName').value.trim(),
     rfid: document.getElementById('prodRfid').value.trim(), category: document.getElementById('prodCategory').value,
@@ -749,6 +829,7 @@ async function saveProduct() {
   } catch (err) { showToast('error', err.message); }
 }
 async function deleteProduct(id) {
+  if (!can('products', 'delete')) { showToast('error', 'ไม่มีสิทธิ์ลบสินค้า'); return; }
   const p = products.find(x => x.id === id);
   if (!p || !confirm(`${T('msg_confirm_delete')} "${p.name}" ?`)) return;
   try {
@@ -801,6 +882,7 @@ function showWithdrawForm(id) {
   document.getElementById('withdrawQty').value = 1; document.getElementById('withdrawQty').max = p.quantity;
 }
 async function processWithdraw() {
+  if (!can('withdraw', 'perform')) { showToast('error', 'ไม่มีสิทธิ์เบิกสินค้า'); return; }
   const id = parseInt(document.getElementById('withdrawProductId').value);
   const qty = parseInt(document.getElementById('withdrawQty').value);
   const user = document.getElementById('withdrawUser').value.trim();
@@ -883,6 +965,7 @@ function showReceiveForm(id) {
   document.getElementById('receiveQty').value = 1;
 }
 async function processReceive() {
+  if (!can('receive', 'perform')) { showToast('error', 'ไม่มีสิทธิ์รับสินค้าเข้า'); return; }
   const id = parseInt(document.getElementById('receiveProductId').value);
   const qty = parseInt(document.getElementById('receiveQty').value);
   const p = products.find(x => x.id === id); if (!p || !qty || qty < 1) { showToast('error', T('msg_specify_qty')); return; }
@@ -987,6 +1070,9 @@ function editUser(id) {
   openModal('addUserModal');
 }
 async function saveUser() {
+  const uid = document.getElementById('editUserId')?.value;
+  if (uid && !can('users', 'edit'))   { showToast('error', 'ไม่มีสิทธิ์แก้ไขผู้ใช้'); return; }
+  if (!uid && !can('users', 'add'))   { showToast('error', 'ไม่มีสิทธิ์เพิ่มผู้ใช้'); return; }
   const id = document.getElementById('editUserId').value;
   const d = { name: document.getElementById('newUserName').value.trim(), username: document.getElementById('newUserUsername').value.trim(), password: document.getElementById('newUserPassword').value, role: document.getElementById('newUserRole').value, dept: document.getElementById('newUserDept').value, active: true };
   if (!d.name || !d.username || !d.password || !d.role) { showToast('error', T('msg_fill_all')); return; }
@@ -1005,6 +1091,7 @@ async function saveUser() {
   } catch (err) { showToast('error', err.message); }
 }
 async function toggleUserActive(id) {
+  if (!can('users', 'toggleActive')) { showToast('error', 'ไม่มีสิทธิ์จัดการสถานะผู้ใช้'); return; }
   const u = users.find(x => x.id === id); if (!u) return;
   try {
     await api('PATCH', `/users/${id}/toggle`);
