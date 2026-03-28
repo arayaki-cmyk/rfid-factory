@@ -586,19 +586,9 @@ tr:hover td {
     background-color: #F1F5F9; /* Highlight แถวเมื่อเอาเมาส์ไปชี้ */
 }
 
-/* ปรับแต่ง Badge สถานะ (In/Out) ให้ชัดเจน */
-.badge {
-    padding: 6px 12px;
-    border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.badge-in { background: #DCFCE7; color: #166534; }  /* สีเขียว สำหรับรับเข้า */
-.badge-out { background: #FEE2E2; color: #991B1B; } /* สีแดง สำหรับเบิกออก */
+/* Badge สถานะ In/Out ในตาราง (ใช้ .status แทน) */
+.badge-in { background: #DCFCE7; color: #166534; }
+.badge-out { background: #FEE2E2; color: #991B1B; }
 
 /* จัดการปุ่ม Action ในตาราง */
 .actions {
