@@ -404,8 +404,13 @@ a{color:var(--accent);cursor:pointer;text-decoration:none;}
 .modal-footer{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--border);background:var(--surface);}
 
 /* HISTORY PAGE */
-.history-filter-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;box-shadow:var(--shadow);}
-.date-range-bar{display:flex;align-items:center;flex-wrap:wrap;gap:16px;}
+.history-filter-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;}
+.history-filter-row{display:flex;align-items:center;gap:12px;}
+.history-filter-top{justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.history-filter-bottom{flex-wrap:wrap;gap:10px;}
+.history-filter-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.history-filter-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.date-range-sep{color:var(--txt3);font-size:13px;}
 .date-input-group{display:flex;align-items:center;gap:8px;}
 .date-input-group label{font-size:12.5px;font-weight:600;color:var(--txt2);white-space:nowrap;}
 .date-input-group input[type="date"]{padding:8px 12px;background:var(--bg-input);border:1.5px solid var(--border);border-radius:var(--radius-xs);font-family:var(--font-main);font-size:13px;color:var(--txt1);outline:none;cursor:pointer;transition:all 0.15s;}
@@ -520,8 +525,10 @@ a{color:var(--accent);cursor:pointer;text-decoration:none;}
   .search-box input{width:160px;}
   .search-box input:focus{width:200px;}
   .content-grid{grid-template-columns:1fr;}
-  .date-range-bar{flex-direction:column;align-items:stretch;}
-  .date-input-group{justify-content:space-between;}
+  .history-filter-left{flex-direction:column;align-items:flex-start;width:100%;}
+  .history-filter-right{margin-left:0;width:100%;}
+  .date-input-group{justify-content:space-between;width:100%;}
+  .date-range-sep{display:none;}
   .history-search{width:100%;}
   .history-summary-card{padding:14px 16px;}
   .hsc-icon{width:40px;height:40px;font-size:18px;}
