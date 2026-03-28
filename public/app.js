@@ -122,23 +122,21 @@ function createParticles() {
 }
 
 // ===== DB =====
-async function loadData() {
+async function loadData(silent = false) {
   try {
     const [p, tx, u, logs, snaps] = await Promise.all([
       api('GET', '/products'), api('GET', '/transactions'),
       api('GET', '/users'), api('GET', '/logs'), api('GET', '/snapshots'),
     ]);
     products = p; transactions = tx; users = u; userLog = logs;
-    // Flatten snapshot format: API returns [{date, data:[...]}, ...] → flat array
     stockSnapshots = snaps.flatMap(s => (s.data || []).map(d => ({ ...d, date: s.date })));
   } catch (e) {
     console.warn('API load failed, keeping existing data:', e.message);
-    // Only set defaults if truly first load (no data yet)
     if (!products.length && !transactions.length) {
       products = []; transactions = []; users = [...DEFAULT_USERS]; userLog = []; stockSnapshots = [];
     }
-    // Show subtle warning toast only if we had data before (unexpected failure)
-    else {
+    // Only show toast for non-silent (background) loads
+    if (!silent && products.length) {
       showToast('warning', '⚠️ ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังใช้ข้อมูลเดิม');
     }
   }
@@ -213,8 +211,13 @@ function updateTxBadge() {
 // ===== AUTH =====
 async function handleLogin(e) {
   e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
   const u = document.getElementById('loginEmail').value.trim();
   const p = document.getElementById('loginPassword').value;
+  // Prevent double-submit
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>กำลังเข้าสู่ระบบ...</span>';
   try {
     const user = await api('POST', '/auth/login', { username: u, password: p });
     currentUser = user;
@@ -223,12 +226,16 @@ async function handleLogin(e) {
     enterApp();
   } catch (err) {
     showFormError('loginError', T('login_error'));
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> <span data-i18n="login_btn">เข้าสู่ระบบ</span><div class="btn-shine"></div>';
   }
 }
 function fillLogin(u, p) { document.getElementById('loginEmail').value = u; document.getElementById('loginPassword').value = p; }
 function checkSession() {
   const s = JSON.parse(localStorage.getItem(DB.session) || 'null');
   if (s) { currentUser = s; enterApp(); }
+  // If no session, ensure login page is visible
+  else { showPage('loginPage'); }
 }
 function logout() {
   addLog('ออกจากระบบ', currentUser?.name || '');
@@ -247,7 +254,7 @@ function logout() {
   if (errEl) errEl.classList.remove('show');
 }
 async function enterApp() {
-  await loadData(); // Fetch fresh data from server
+  await loadData(false); // show error only on first load
   showPage('appLayout');
   updateUserDisplay();
   applyRoles();
@@ -274,7 +281,7 @@ function applyRoles() {
 function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(async () => {
-    await loadData(); // Fetch fresh data from server
+    await loadData(true); // silent refresh — no error toast
     if (currentPage === 'dashboard') {
       renderDashboard();
     }
@@ -1203,13 +1210,16 @@ function renderSnapshotTimeline() {
 // ANALYTICS — Chart.js powered
 // =========================================================
 
-let _anPeriod = 30; // current period in days
+let _anPeriod = 14; // current period in days (default 14 to match first tab)
 let _anCharts = {};  // keep chart instances to destroy on re-render
 
 function setAnPeriod(days, btn) {
   _anPeriod = days;
   document.querySelectorAll('.an2-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  // Update panel title dynamically
+  const titleEl = document.getElementById('anLinePeriodLabel');
+  if (titleEl) titleEl.textContent = `${days} วัน`;
   renderAnalyticsLineChart();
 }
 
