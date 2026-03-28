@@ -530,7 +530,7 @@ a{color:var(--accent);cursor:pointer;text-decoration:none;}
   .history-search{width:100%;}
   .hf-date-group{flex-direction:column;align-items:flex-start;width:100%;}
   .hf-date-sep{display:none;}
-  .hf-row-top{flex-direction:column;align-items:flex-start;}
+  .hf-row-top{flex-direction:column;align-items:stretch;}
   .hf-row-top .btn{width:100%;justify-content:center;}
   .history-summary-card{padding:14px 16px;}
   .hsc-icon{width:40px;height:40px;font-size:18px;}
