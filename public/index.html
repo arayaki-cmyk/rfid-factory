@@ -246,12 +246,12 @@
           </div>
 
           <!-- Recent Activity -->
-          <div class="panel">
+          <div class="panel" style="display:flex;flex-direction:column;">
             <div class="panel-header">
               <h3><i class="fas fa-clock-rotate-left"></i> <span data-i18n="dash_recent">กิจกรรมล่าสุด</span></h3>
               <button class="btn btn-secondary btn-sm" onclick="navigateTo('transactions')" data-i18n="dash_view_all">ดูทั้งหมด</button>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" style="flex:1;padding:0;overflow-y:auto;">
               <ul class="activity-list" id="dashRecentActivity"></ul>
             </div>
           </div>
@@ -264,23 +264,23 @@
             <div class="panel-header">
               <h3><i class="fas fa-chart-bar text-cyan"></i> <span data-i18n="dash_chart_title">กราฟการเบิกสินค้า (7 วัน)</span></h3>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" style="min-height:240px;">
               <div class="chart-container" id="dashWithdrawChart"></div>
             </div>
           </div>
 
           <!-- Low Stock -->
-          <div class="panel">
+          <div class="panel" style="display:flex;flex-direction:column;">
             <div class="panel-header">
               <h3><i class="fas fa-triangle-exclamation text-amber"></i> <span data-i18n="dash_low_stock_title">สินค้าใกล้หมด</span></h3>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" style="flex:1;padding:0;">
               <table class="data-table">
                 <thead>
                   <tr><th>สินค้า</th><th>รหัส</th><th>คงเหลือ</th><th>สถานะ</th></tr>
                 </thead>
                 <tbody id="lowStockBody"></tbody>
-               </table>
+              </table>
             </div>
           </div>
         </div>
