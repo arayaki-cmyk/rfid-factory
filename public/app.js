@@ -709,25 +709,53 @@ function renderRecentActivity() {
 function renderWithdrawChart() {
   const c = document.getElementById('dashWithdrawChart');
   if (!c) return;
+
   const days = [];
-  for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d.toISOString().slice(0, 10)); }
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
   const data = days.map(day => {
-    const outCount = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
-    const inCount  = transactions.filter(t => t.type === 'in'  && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
-    return { day: day.slice(5), outCount, inCount };
+    const outQty = transactions.filter(t => t.type === 'out' && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
+    const inQty  = transactions.filter(t => t.type === 'in'  && t.time && t.time.startsWith(day)).reduce((s, t) => s + t.qty, 0);
+    const d2 = new Date(day);
+    const label = `${String(d2.getDate()).padStart(2,'0')}/${String(d2.getMonth()+1).padStart(2,'0')}`;
+    return { label, outQty, inQty };
   });
-  const max = Math.max(...data.map(d => Math.max(d.outCount, d.inCount)), 1);
-  const legend = `<div class="chart-legend"><span class="leg-out">เบิกออก</span><span class="leg-in">รับเข้า</span></div>`;
-  const bars = data.map(d => `
-    <div class="chart-bar-group">
-      <div class="chart-bar-label"><span>${d.day}</span><span style="color:var(--accent-red);font-weight:700;">${d.outCount||0}</span></div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
-        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.outCount/max*100}%;background:linear-gradient(90deg,#EF4444,#F87171);"></div></div>
-        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.inCount/max*100}%;background:linear-gradient(90deg,#22C55E,#4ADE80);"></div></div>
+
+  const maxVal = Math.max(...data.map(d => Math.max(d.outQty, d.inQty)), 1);
+  const chartH = 160;
+
+  const bars = data.map(d => {
+    const outH = Math.round((d.outQty / maxVal) * chartH);
+    const inH  = Math.round((d.inQty  / maxVal) * chartH);
+    const hasData = d.outQty > 0 || d.inQty > 0;
+    return `<div class="dc-col">
+      <div class="dc-bars">
+        <div class="dc-bar-wrap">
+          ${d.outQty > 0 ? `<span class="dc-val out-val">${d.outQty}</span>` : ''}
+          <div class="dc-bar dc-bar-out" style="height:${outH}px" title="เบิกออก: ${d.outQty}"></div>
+        </div>
+        <div class="dc-bar-wrap">
+          ${d.inQty > 0 ? `<span class="dc-val in-val">${d.inQty}</span>` : ''}
+          <div class="dc-bar dc-bar-in" style="height:${inH}px" title="รับเข้า: ${d.inQty}"></div>
+        </div>
       </div>
-      <span style="font-size:11px;color:var(--accent-green);font-weight:700;width:24px;text-align:right;">${d.inCount||0}</span>
-    </div>`).join('');
-  c.innerHTML = legend + bars;
+      <div class="dc-label${hasData ? ' dc-label-active' : ''}">${d.label}</div>
+    </div>`;
+  }).join('');
+
+  const totalOut = data.reduce((s, d) => s + d.outQty, 0);
+  const totalIn  = data.reduce((s, d) => s + d.inQty, 0);
+
+  c.innerHTML = `
+    <div class="dc-summary">
+      <span class="dc-sum-item"><span class="dc-dot out-dot"></span>เบิกออก <strong>${totalOut}</strong> ชิ้น</span>
+      <span class="dc-sum-item"><span class="dc-dot in-dot"></span>รับเข้า <strong>${totalIn}</strong> ชิ้น</span>
+    </div>
+    <div class="dc-chart" style="--chart-h:${chartH}px">
+      ${bars}
+    </div>`;
 }
 
 function renderLowStock() {
@@ -741,15 +769,34 @@ function renderLowStock() {
 function renderTopWithdraw() {
   const c = document.getElementById('dashTopWithdraw');
   if (!c) return;
+
   const counts = {};
-  transactions.filter(t => t.type === 'out').forEach(t => { counts[t.product] = (counts[t.product] || 0) + t.qty; });
+  transactions.filter(t => t.type === 'out').forEach(t => {
+    if (t.product) counts[t.product] = (counts[t.product] || 0) + t.qty;
+  });
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  if (!sorted.length) { c.innerHTML = `<div class="empty-state"><i class="fas fa-chart-bar"></i><p>${T('dash_no_withdraw_data')}</p></div>`; return; }
-  const max = sorted[0][1];
-  c.innerHTML = sorted.map(([name, count], i) => {
-    const rank = i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze';
-    return `<div class="top-withdraw-item"><div class="top-withdraw-rank ${rank}">${i + 1}</div><div class="top-withdraw-info"><div class="name">${name}</div><div class="count">${T('dash_withdrawn')} ${count} ${T('dash_pieces')}</div></div><div class="top-withdraw-bar"><div class="top-withdraw-bar-fill" style="width:${count / max * 100}%"></div></div></div>`;
-  }).join('');
+
+  if (!sorted.length) {
+    c.innerHTML = `<div class="empty-state"><i class="fas fa-chart-bar"></i><p>ยังไม่มีข้อมูลการเบิก</p><small>ข้อมูลจะแสดงหลังจากมีการเบิกสินค้า</small></div>`;
+    return;
+  }
+  const maxQ = sorted[0][1];
+  const medals = ['🥇','🥈','🥉'];
+  const rankClass = ['gold','silver','bronze'];
+
+  c.innerHTML = `<div class="tw-grid">` + sorted.map(([name, qty], i) => {
+    const pct = Math.round(qty / maxQ * 100);
+    const prod = products.find(p => p.name === name);
+    const unit = prod?.unit || 'ชิ้น';
+    return `<div class="tw-item">
+      <div class="tw-rank ${rankClass[i] || ''}">${medals[i] || (i+1)}</div>
+      <div class="tw-info">
+        <div class="tw-name">${escapeHtml(name)}</div>
+        <div class="tw-bar-track"><div class="tw-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="tw-qty"><strong>${qty.toLocaleString()}</strong><span>${unit}</span></div>
+    </div>`;
+  }).join('') + `</div>`;
 }
 
 // ===== PRODUCTS =====
