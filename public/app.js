@@ -75,15 +75,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ===== THEME =====
 function loadTheme() {
-  const saved = localStorage.getItem(DB.theme) || 'dark';
-  setTheme(saved);
+  // Single minimal theme
+  document.documentElement.removeAttribute('data-theme');
 }
 function toggleTheme() {
-  // Cycle through themes: dark → light → cream → ocean → sakura → dark
-  const themes = ['dark', 'light', 'cream', 'ocean', 'sakura'];
-  const cur = document.documentElement.getAttribute('data-theme');
-  const idx = themes.indexOf(cur);
-  setTheme(themes[(idx + 1) % themes.length]);
+  // Single minimal theme - no toggle
 }
 function selectTheme(theme) {
   setTheme(theme);
@@ -91,14 +87,7 @@ function selectTheme(theme) {
   showToast('success', `${T('msg_theme_changed')} "${theme}"`);
 }
 function setTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem(DB.theme, theme);
-  const icon = document.getElementById('themeIcon');
-  if (icon) {
-    const icons = { dark: 'fa-moon', light: 'fa-sun', cream: 'fa-mug-hot', ocean: 'fa-water', sakura: 'fa-fan' };
-    icon.className = `fas ${icons[theme] || 'fa-palette'}`;
-  }
-  updateThemePickerUI(theme);
+  // Single minimal theme
 }
 function updateThemePickerUI(theme) {
   document.querySelectorAll('.theme-option').forEach(opt => {
@@ -1247,9 +1236,7 @@ function getChartColors(n) {
   return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
 }
 
-function isDark() {
-  return document.documentElement.getAttribute('data-theme') !== 'light';
-}
+function isDark() { return false; }
 
 function chartDefaults() {
   const dark = isDark();
