@@ -1089,15 +1089,18 @@ function renderHistoryChart() {
   });
 
   const max = Math.max(...data.map(d => Math.max(d.outQty, d.inQty)), 1);
-  const BAR_H = 140;
+  const BAR_H = 130;
+  // Adaptive bar width: wider when fewer days, narrower when many
+  const barW = days.length <= 14 ? 18 : days.length <= 30 ? 14 : 10;
+  const groupW = barW * 2 + 10;
 
   const bars = data.map(d => {
     const outH = Math.max(Math.round(d.outQty / max * BAR_H), d.outQty > 0 ? 4 : 0);
     const inH  = Math.max(Math.round(d.inQty  / max * BAR_H), d.inQty  > 0 ? 4 : 0);
-    return `<div class="hc-day-group">
+    return `<div class="hc-day-group" style="min-width:${groupW}px;">
       <div class="hc-bars">
-        <div class="hc-bar hc-bar-out" style="height:${outH}px" title="เบิกออก: ${d.outQty}"><span>${d.outQty || ''}</span></div>
-        <div class="hc-bar hc-bar-in"  style="height:${inH}px"  title="รับเข้า: ${d.inQty}"><span>${d.inQty  || ''}</span></div>
+        <div class="hc-bar hc-bar-out" style="height:${outH}px;width:${barW}px;" title="เบิกออก: ${d.outQty}"><span>${d.outQty || ''}</span></div>
+        <div class="hc-bar hc-bar-in"  style="height:${inH}px;width:${barW}px;"  title="รับเข้า: ${d.inQty}"><span>${d.inQty  || ''}</span></div>
       </div>
       <div class="hc-day-label">${d.day}</div>
     </div>`;
