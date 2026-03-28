@@ -74,21 +74,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ===== THEME =====
-function loadTheme() {
-  // Single minimal theme
-  document.documentElement.removeAttribute('data-theme');
-}
-function toggleTheme() {
-  // Single minimal theme - no toggle
-}
-function selectTheme(theme) {
-  setTheme(theme);
-  closeModal('themePickerModal');
-  showToast('success', `${T('msg_theme_changed')} "${theme}"`);
-}
-function setTheme(theme) {
-  // Single minimal theme
-}
+function loadTheme() { /* single light theme */ }
+function toggleTheme() { /* single light theme */ }
+function selectTheme(theme) { closeModal('themePickerModal'); }
+function setTheme(theme) { /* single light theme */ }
+function applyTheme(theme) { /* single light theme */ }
 function updateThemePickerUI(theme) {
   document.querySelectorAll('.theme-option').forEach(opt => {
     opt.classList.toggle('active', opt.getAttribute('data-theme-value') === theme);
@@ -1273,14 +1263,13 @@ function getChartColors(n) {
   return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
 }
 
-function isDark() { return false; }
+function isDark() { return false; } // Single light theme
 
 function chartDefaults() {
-  const dark = isDark();
   return {
-    textColor:  dark ? 'rgba(237,232,255,0.7)' : 'rgba(26,16,64,0.65)',
-    gridColor:  dark ? 'rgba(139,92,246,0.12)'  : 'rgba(109,40,217,0.08)',
-    tickColor:  dark ? 'rgba(237,232,255,0.5)'  : 'rgba(75,58,112,0.7)',
+    textColor: '#9EA8B5',
+    gridColor: 'rgba(0,0,0,0.05)',
+    tickColor: '#555C6B',
   };
 }
 
@@ -1376,10 +1365,10 @@ function renderAnalyticsLineChart() {
       plugins: {
         legend: { labels: { color: textColor, font: { family: "'Plus Jakarta Sans','Noto Sans Thai',sans-serif", size: 12 }, boxWidth: 14, padding: 18 } },
         tooltip: {
-          backgroundColor: isDark() ? '#1E1640' : '#fff',
-          titleColor: isDark() ? '#EDE8FF' : '#1A1040',
-          bodyColor:  isDark() ? '#A89EC8' : '#4B3A70',
-          borderColor: isDark() ? 'rgba(139,92,246,.25)' : 'rgba(109,40,217,.15)',
+          backgroundColor: '#ffffff',
+          titleColor: '#1A1D23',
+          bodyColor: '#555C6B',
+          borderColor: 'rgba(0,0,0,0.08)',
           borderWidth: 1, padding: 10, cornerRadius: 10,
         },
       },
@@ -1411,18 +1400,18 @@ function renderAnalyticsDonut() {
     type: 'doughnut',
     data: {
       labels: entries.map(e=>e[0]),
-      datasets: [{ data: entries.map(e=>e[1]), backgroundColor: colors, borderWidth: 2, borderColor: isDark()?'#160F2A':'#fff', hoverOffset: 6 }]
+      datasets: [{ data: entries.map(e=>e[1]), backgroundColor: colors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 6 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       cutout: '65%',
       plugins: {
-        legend: { position: 'bottom', labels: { color: textColor, font: { size: 11 }, padding: 12, boxWidth: 12 } },
+        legend: { position: 'bottom', labels: { color: textColor, font: { family: "'Plus Jakarta Sans','Noto Sans Thai',sans-serif", size: 11 }, padding: 14, boxWidth: 12, usePointStyle: true, pointStyleWidth: 10 } },
         tooltip: {
-          backgroundColor: isDark()?'#1E1640':'#fff',
-          titleColor: isDark()?'#EDE8FF':'#1A1040',
-          bodyColor:  isDark()?'#A89EC8':'#4B3A70',
-          borderColor: isDark()?'rgba(139,92,246,.25)':'rgba(109,40,217,.15)',
+          backgroundColor: '#ffffff',
+          titleColor: '#1A1D23',
+          bodyColor:  '#555C6B',
+          borderColor: 'rgba(0,0,0,0.08)',
           borderWidth: 1, cornerRadius: 10,
           callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${(ctx.parsed/ctx.dataset.data.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)` }
         },
@@ -1449,7 +1438,7 @@ function renderAnalyticsTopBar() {
       datasets: [{
         label: 'จำนวนเบิก',
         data: sorted.map(e=>e[1]),
-        backgroundColor: sorted.map((_,i) => `hsla(${260-i*8},70%,${isDark()?60:50}%,0.75)`),
+        backgroundColor: sorted.map((_,i) => `hsla(${240+i*15},65%,55%,0.75)`),
         borderRadius: 5,
         borderSkipped: false,
       }]
@@ -1460,10 +1449,10 @@ function renderAnalyticsTopBar() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: isDark()?'#1E1640':'#fff',
-          titleColor: isDark()?'#EDE8FF':'#1A1040',
-          bodyColor: isDark()?'#A89EC8':'#4B3A70',
-          borderColor: isDark()?'rgba(139,92,246,.25)':'rgba(109,40,217,.15)',
+          backgroundColor: '#ffffff',
+          titleColor: '#1A1D23',
+          bodyColor: '#555C6B',
+          borderColor: 'rgba(0,0,0,0.08)',
           borderWidth:1, cornerRadius:10,
         }
       },
@@ -1504,10 +1493,10 @@ function renderAnalyticsUserBar() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: isDark()?'#1E1640':'#fff',
-          titleColor: isDark()?'#EDE8FF':'#1A1040',
-          bodyColor: isDark()?'#A89EC8':'#4B3A70',
-          borderColor: isDark()?'rgba(16,185,129,.25)':'rgba(16,185,129,.15)',
+          backgroundColor: '#ffffff',
+          titleColor: '#1A1D23',
+          bodyColor: '#555C6B',
+          borderColor: 'rgba(34,197,94,0.15)',
           borderWidth:1, cornerRadius:10,
         }
       },
@@ -1531,15 +1520,11 @@ function renderAnalyticsHeatmap() {
     if (!isNaN(h) && h>=0 && h<24) hours[h]++;
   });
   const max = Math.max(...hours, 1);
-  const isDk = isDark();
-
   el.innerHTML = hours.map((count,h) => {
     const pct = count/max;
     const bg = count===0
-      ? (isDk?'rgba(139,92,246,.06)':'rgba(109,40,217,.05)')
-      : isDk
-        ? `rgba(124,58,237,${0.15+pct*0.75})`
-        : `rgba(99,102,241,${0.12+pct*0.70})`;
+      ? 'rgba(91,106,240,0.05)'
+      : `rgba(91,106,240,${0.12+pct*0.72})`;
     const lbl = String(h).padStart(2,'0')+':00';
     return `<div class="an2-heat-cell" style="background:${bg}" title="${lbl} — ${count} รายการ">
       <div class="an2-heat-h">${String(h).padStart(2,'0')}</div>
@@ -1547,9 +1532,7 @@ function renderAnalyticsHeatmap() {
     </div>`;
   }).join('');
 
-  if (lg) lg.innerHTML = `<span style="font-size:11px;color:var(--txt3);">น้อย</span>
-    <div class="an2-heat-leg">${[0.05,0.25,0.5,0.75,1].map(p=>`<span style="background:${isDk?`rgba(124,58,237,${0.15+p*0.75})`:`rgba(99,102,241,${0.12+p*0.70})`}"></span>`).join('')}</div>
-    <span style="font-size:11px;color:var(--txt3);">มาก</span>`;
+  if (lg) lg.innerHTML = `<span style="font-size:11px;color:var(--txt3);">น้อย</span><div class="an2-heat-leg">${[0.05,0.25,0.5,0.75,1].map(p=>`<span style="background:rgba(91,106,240,${(0.12+p*0.72).toFixed(2)})"></span>`).join('')}</div><span style="font-size:11px;color:var(--txt3);">มาก</span>`;
 }
 
 // ── Stock health ──────────────────────────────────────
@@ -1568,7 +1551,7 @@ function renderAnalyticsStockHealth() {
     <div class="an2-health-gauge">
       <div class="an2-gauge-ring">
         <svg viewBox="0 0 120 120" width="120" height="120">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="${isDark()?'rgba(139,92,246,.12)':'rgba(109,40,217,.08)'}" stroke-width="14"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(91,106,240,0.08)" stroke-width="14"/>
           <circle cx="60" cy="60" r="50" fill="none" stroke="#10B981" stroke-width="14"
             stroke-dasharray="${pctOk*3.14159} 314.159" stroke-dashoffset="78.54"
             stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/>
