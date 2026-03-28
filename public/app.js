@@ -114,10 +114,7 @@ async function loadData(silent = false) {
     if (!products.length && !transactions.length) {
       products = []; transactions = []; users = [...DEFAULT_USERS]; userLog = []; stockSnapshots = [];
     }
-    // Only show toast for non-silent (background) loads
-    if (!silent && products.length) {
-      showToast('warning', '⚠️ ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังใช้ข้อมูลเดิม');
-    }
+    // Warning toast suppressed
   }
   migrateLegacyCategoryKeys();
   recalcNextIds();
