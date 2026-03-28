@@ -570,21 +570,39 @@ function renderStats() {
 function renderRecentActivity() {
   const el = document.getElementById('dashRecentActivity');
   if (!el) return;
-  const recent = transactions.slice(0, 10);
-  if (!recent.length) { 
-    el.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>${T('dash_no_activity')}</p><small>${T('dash_start_scan')}</small></div>`; 
-    return; 
+
+  // Merge transactions + userLog into unified activity stream
+  const txItems = transactions.slice(0, 30).map(t => {
+    const iconClass = t.type === 'in' ? 'in' : t.type === 'out' ? 'out' : 'scan';
+    const icon = t.type === 'in' ? 'fa-arrow-right-to-bracket' : t.type === 'out' ? 'fa-arrow-right-from-bracket' : 'fa-satellite-dish';
+    const badge = t.type === 'in'
+      ? `<span class="status in-type" style="font-size:10px;padding:2px 7px;">${T('tx_type_in')}</span>`
+      : t.type === 'out'
+      ? `<span class="status out-type" style="font-size:10px;padding:2px 7px;">${T('tx_type_out')}</span>`
+      : `<span class="status" style="font-size:10px;padding:2px 7px;background:#6366f120;color:#6366f1;">SCAN</span>`;
+    return { time: t.time||'', icon, iconClass, badge, title: escapeHtml(t.product||t.rfid||'-'), sub: t.qty ? `${t.qty} ${t.unit||'ชิ้น'} · ${t.user||''}` : (t.user||'') };
+  });
+
+  const logItems = userLog.slice(0, 20).map(l => {
+    const iconClass = l.action.includes('เบิก') ? 'out' : l.action.includes('รับ') ? 'in' : 'scan';
+    const icon = l.action.includes('เบิก') ? 'fa-arrow-right-from-bracket' : l.action.includes('รับ') ? 'fa-arrow-right-to-bracket' : l.action.includes('สแกน') ? 'fa-satellite-dish' : 'fa-circle-dot';
+    const badge = `<span class="status" style="font-size:10px;padding:2px 7px;background:#f3f4f6;color:#6b7280;">${escapeHtml(l.action)}</span>`;
+    return { time: l.time||'', icon, iconClass, badge, title: escapeHtml(l.user||'ระบบ'), sub: escapeHtml(l.detail||'') };
+  });
+
+  const all = [...txItems, ...logItems].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 12);
+
+  if (!all.length) {
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>${T('dash_no_activity')}</p><small>${T('dash_start_scan')}</small></div>`;
+    return;
   }
-  el.innerHTML = recent.map(t => {
-    const ic = t.type === 'in' ? 'fa-arrow-right-to-bracket' : t.type === 'out' ? 'fa-arrow-right-from-bracket' : 'fa-satellite-dish';
-    const typeLabel = t.type === 'in' ? T('tx_type_in') : T('tx_type_out');
-    const typeClass = t.type === 'in' ? 'in-type' : 'out-type';
-    const [date, time] = (t.time || '').split(' ');
+  el.innerHTML = all.map(item => {
+    const [date, time] = (item.time || '').split(' ');
     return `<li class="activity-item">
-      <div class="activity-icon ${t.type}"><i class="fas ${ic}"></i></div>
+      <div class="activity-icon ${item.iconClass}"><i class="fas ${item.icon}"></i></div>
       <div class="activity-details">
-        <strong>${escapeHtml(t.product || '-')}</strong>
-        <small><span class="status ${typeClass}" style="font-size:10px;padding:2px 7px;">${typeLabel}</span> ${t.qty} ${t.unit || 'ชิ้น'} · ${t.user || ''}</small>
+        <strong>${item.title}</strong>
+        <small>${item.badge} ${item.sub}</small>
       </div>
       <div class="activity-time">${date ? date.slice(5) : ''} ${time ? time.slice(0,5) : ''}</div>
     </li>`;
