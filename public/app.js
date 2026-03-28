@@ -550,10 +550,21 @@ function renderRecentActivity() {
   const el = document.getElementById('dashRecentActivity');
   if (!el) return;
   const recent = transactions.slice(0, 8);
-  if (!recent.length) { el.innerHTML = `<li style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-inbox" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4;"></i>${T('dash_no_activity')}<br><small>${T('dash_start_scan')}</small></li>`; return; }
+  if (!recent.length) { 
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>${T('dash_no_activity')}</p><small>${T('dash_start_scan')}</small></div>`; 
+    return; 
+  }
   el.innerHTML = recent.map(t => {
     const ic = t.type === 'in' ? 'fa-arrow-right-to-bracket' : t.type === 'out' ? 'fa-arrow-right-from-bracket' : 'fa-satellite-dish';
-    return `<li><div class="activity-icon ${t.type}"><i class="fas ${ic}"></i></div><div class="activity-details"><strong>${t.product}</strong> — ${t.type === 'in' ? T('tx_type_in') : T('tx_type_out')} ${t.qty}</div><div class="activity-time">${fmtTime(t.time)}</div></li>`;
+    const typeLabel = t.type === 'in' ? 'รับเข้า' : 'เบิกออก';
+    return `<li class="activity-item">
+      <div class="activity-icon ${t.type}"><i class="fas ${ic}"></i></div>
+      <div class="activity-details">
+        <strong>${escapeHtml(t.product || '-')}</strong>
+        <small>${typeLabel} ${t.qty} ${t.unit || 'ชิ้น'}</small>
+      </div>
+      <div class="activity-time">${fmtTime(t.time)}</div>
+    </li>`;
   }).join('');
 }
 
