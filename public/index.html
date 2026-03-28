@@ -182,10 +182,6 @@
         </div>
         <div class="topbar-right">
           <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn" title="Switch to English">EN</button>
-          <button class="theme-toggle" onclick="showToast('info', 'ธีมถูกตั้งค่าให้เป็นมินิมอลแล้ว')" data-i18n-title="topbar_theme"
-            title="เลือกธีม" id="themeToggle">
-            <i class="fas fa-palette" id="themeIcon"></i>
-          </button>
           <div class="search-box">
             <input type="text" placeholder="ค้นหาสินค้า..." data-i18n-ph="topbar_search_ph" id="globalSearch"
               oninput="handleGlobalSearch(this.value)">
@@ -288,10 +284,10 @@
                     <th>รหัส</th>
                     <th>คงเหลือ</th>
                     <th>สถานะ</th>
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody id="lowStockBody"></tbody>
-              </table>
+               </table>
             </div>
           </div>
         </div>
@@ -314,10 +310,6 @@
               id="productSearch" oninput="filterProducts()"><i class="fas fa-search"></i></div>
           <div class="filter-chips" id="categoryFilters">
             <button class="filter-chip active" onclick="setProductFilter('all', this)">ทั้งหมด</button>
-            <button class="filter-chip" onclick="setProductFilter('electronics', this)">อิเล็กทรอนิกส์</button>
-            <button class="filter-chip" onclick="setProductFilter('mechanical', this)">เครื่องกล</button>
-            <button class="filter-chip" onclick="setProductFilter('material', this)">วัสดุสิ้นเปลือง</button>
-            <button class="filter-chip" onclick="setProductFilter('safety', this)">Safety</button>
           </div>
           <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddProductModal()"
             id="btnAddProduct"><i class="fas fa-plus"></i> เพิ่มสินค้า</button>
@@ -335,10 +327,10 @@
                   <th>หน่วย</th>
                   <th>สถานะ</th>
                   <th>จัดการ</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="productTableBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
@@ -397,10 +389,10 @@
                   <th>จำนวน</th>
                   <th>ผู้เบิก</th>
                   <th>เหตุผล</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="withdrawHistoryBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
@@ -514,10 +506,10 @@
                   <th>SKU</th>
                   <th>จำนวน</th>
                   <th>ผู้รับ</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="receiveHistoryBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
@@ -547,10 +539,10 @@
                   <th>จำนวน</th>
                   <th>ผู้ทำรายการ</th>
                   <th>หมายเหตุ</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="txTableBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
@@ -612,10 +604,10 @@
                   <th>จำนวน</th>
                   <th>ผู้ทำรายการ</th>
                   <th>หมายเหตุ</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="historyTableBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
 
@@ -635,10 +627,10 @@
                   <th>รหัส</th>
                   <th>คงเหลือ ณ วันนั้น</th>
                   <th>เทียบปัจจุบัน</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="snapshotTableBody"></tbody>
-            </table>
+             </table>
           </div>
         </div>
       </div>
@@ -728,7 +720,6 @@
       </div>
 
       <!-- ===== USER LOG ===== -->
-
       <div class="page-content page-view" id="userLogView">
         <div class="panel">
           <div class="panel-body" style="padding:0;">
@@ -740,7 +731,7 @@
                   <th>บทบาท</th>
                   <th>การกระทำ</th>
                   <th>รายละเอียด</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="userLogBody"></tbody>
             </table>
@@ -765,168 +756,11 @@
                   <th>แผนก</th>
                   <th>สถานะ</th>
                   <th>จัดการ</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody id="userTableBody"></tbody>
             </table>
           </div>
-        </div>
-      </div>
-
-
-      <!-- ===== USER LOG ===== -->
-
-      <div class="page-content page-view" id="userLogView">
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>ผู้ใช้</th>
-                  <th>บทบาท</th>
-                  <th>การกระทำ</th>
-                  <th>รายละเอียด</th>
-                </tr>
-              </thead>
-              <tbody id="userLogBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== USER MANAGEMENT ===== -->
-      <div class="page-content page-view" id="userManagementView">
-        <div class="filter-bar">
-          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddUserModal()"><i
-              class="fas fa-user-plus"></i> เพิ่มผู้ใช้</button>
-        </div>
-        <div class="panel">
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ชื่อ</th>
-                  <th>Username</th>
-                  <th>บทบาท</th>
-                  <th>แผนก</th>
-                  <th>สถานะ</th>
-                  <th>จัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="userTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== AI RESTOCK PREDICTION ===== -->
-      <div class="page-content page-view" id="aiRestockView">
-
-        <!-- Hero header -->
-        <div class="ai-hero">
-          <div class="ai-hero-bg"></div>
-          <div class="ai-hero-content">
-            <div class="ai-hero-left">
-              <div class="ai-hero-icon">
-                <i class="fas fa-robot"></i>
-                <div class="ai-hero-ring"></div>
-                <div class="ai-hero-ring r2"></div>
-              </div>
-              <div class="ai-hero-text">
-                <h2 class="ai-hero-title">AI Restock Prediction</h2>
-                <p class="ai-hero-sub">Claude AI วิเคราะห์ pattern การเบิกสินค้า และแนะนำแผน restock ที่เหมาะสม</p>
-                <div class="ai-hero-tags">
-                  <span class="ai-tag"><i class="fas fa-chart-line"></i> Pattern Analysis</span>
-                  <span class="ai-tag"><i class="fas fa-brain"></i> Claude AI</span>
-                  <span class="ai-tag"><i class="fas fa-boxes-stacked"></i> Inventory Insight</span>
-                </div>
-              </div>
-            </div>
-            <button class="btn btn-primary ai-analyze-btn" id="aiAnalyzeBtn" onclick="runAiRestock()">
-              <i class="fas fa-sparkles"></i>
-              <span>วิเคราะห์ตอนนี้</span>
-              <div class="btn-shine"></div>
-            </button>
-          </div>
-        </div>
-
-        <!-- Empty state (default) -->
-        <div id="aiRestockEmpty" class="ai-idle-card">
-          <div class="ai-idle-grid">
-            <div class="ai-idle-step">
-              <div class="ai-idle-icon-wrap" style="background:rgba(124,58,237,.10);color:var(--p600);">
-                <i class="fas fa-database"></i>
-              </div>
-              <div class="ai-idle-step-title">รวบรวมข้อมูล</div>
-              <div class="ai-idle-step-desc">ดึงข้อมูลสต็อกและประวัติการเบิก 30 วัน</div>
-            </div>
-            <div class="ai-idle-arrow"><i class="fas fa-chevron-right"></i></div>
-            <div class="ai-idle-step">
-              <div class="ai-idle-icon-wrap" style="background:rgba(99,102,241,.10);color:var(--accent-indigo);">
-                <i class="fas fa-chart-line"></i>
-              </div>
-              <div class="ai-idle-step-title">วิเคราะห์ Pattern</div>
-              <div class="ai-idle-step-desc">คำนวณ trend และคาดการณ์ระยะเวลาสต็อก</div>
-            </div>
-            <div class="ai-idle-arrow"><i class="fas fa-chevron-right"></i></div>
-            <div class="ai-idle-step">
-              <div class="ai-idle-icon-wrap" style="background:rgba(16,185,129,.10);color:var(--accent-green);">
-                <i class="fas fa-lightbulb"></i>
-              </div>
-              <div class="ai-idle-step-title">แนะนำ Restock</div>
-              <div class="ai-idle-step-desc">รับคำแนะนำที่แม่นยำจาก Claude AI</div>
-            </div>
-          </div>
-          <p class="ai-idle-hint">กด <strong>วิเคราะห์ตอนนี้</strong> เพื่อเริ่มต้น</p>
-        </div>
-
-        <!-- Loading state -->
-        <div id="aiRestockLoading" style="display:none;">
-          <div class="ai-loading-card">
-            <div class="ai-loading-orb">
-              <div class="ai-orb-inner"><i class="fas fa-robot"></i></div>
-            </div>
-            <div class="ai-loading-title">Claude กำลังวิเคราะห์<span class="ai-dots"><span>.</span><span>.</span><span>.</span></span></div>
-            <div class="ai-loading-steps" id="aiLoadingSteps"></div>
-          </div>
-        </div>
-
-        <!-- Results -->
-        <div id="aiRestockResults" style="display:none;">
-
-          <!-- Summary KPI cards -->
-          <div class="ai-summary-grid" id="aiSummaryGrid"></div>
-
-          <!-- Recommendations + Analysis -->
-          <div class="ai-main-grid">
-            <div class="panel">
-              <div class="panel-header">
-                <h3><i class="fas fa-list-check text-cyan"></i> รายการแนะนำ Restock</h3>
-                <div class="ai-last-updated" id="aiLastUpdated"></div>
-              </div>
-              <div id="aiRecommendList" style="padding:0;"></div>
-            </div>
-            <div class="panel">
-              <div class="panel-header">
-                <h3><i class="fas fa-brain text-purple"></i> การวิเคราะห์จาก Claude</h3>
-              </div>
-              <div class="panel-body">
-                <div class="ai-analysis-text" id="aiAnalysisText"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Trend chart -->
-          <div class="panel mt-4">
-            <div class="panel-header">
-              <h3><i class="fas fa-chart-line text-amber"></i> Trend การเบิก 14 วัน (Top 5 สินค้า)</h3>
-            </div>
-            <div class="panel-body">
-              <div id="aiTrendChart" class="ai-trend-chart"></div>
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -1040,120 +874,6 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('addUserModal')">ยกเลิก</button>
         <button class="btn btn-primary" onclick="saveUser()"><i class="fas fa-save"></i> บันทึก</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Theme Picker Modal -->
-  <div class="modal-overlay" id="themePickerModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3><i class="fas fa-palette text-cyan"></i> เลือกธีม</h3>
-        <button class="modal-close" onclick="closeModal('themePickerModal')"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="theme-picker-grid">
-
-          <!-- DARK -->
-          <div class="theme-option" data-theme-value="dark" onclick="selectTheme('dark')">
-            <div class="theme-preview theme-preview-dark">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-stars">
-                <span></span><span></span><span></span><span></span><span></span>
-              </div>
-            </div>
-            <div class="theme-option-label">Dark</div>
-            <div class="theme-option-desc">Deep Space มืดสนิท</div>
-          </div>
-
-          <!-- LIGHT -->
-          <div class="theme-option" data-theme-value="light" onclick="selectTheme('light')">
-            <div class="theme-preview theme-preview-light">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-sun"></div>
-            </div>
-            <div class="theme-option-label">Light</div>
-            <div class="theme-option-desc">สว่างสดใส</div>
-          </div>
-
-          <!-- CREAM -->
-          <div class="theme-option" data-theme-value="cream" onclick="selectTheme('cream')">
-            <div class="theme-preview theme-preview-cream">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-leaf">🍂</div>
-            </div>
-            <div class="theme-option-label">Cream</div>
-            <div class="theme-option-desc">อบอุ่น นุ่มนวล</div>
-          </div>
-
-          <!-- OCEAN -->
-          <div class="theme-option" data-theme-value="ocean" onclick="selectTheme('ocean')">
-            <div class="theme-preview theme-preview-ocean">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-wave">
-                <svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                  <path d="M0,10 C15,0 25,20 40,10 C55,0 65,20 80,10 L80,20 L0,20 Z" fill="rgba(56,189,248,0.35)"/>
-                  <path d="M0,14 C12,6 28,22 44,13 C58,5 68,18 80,13 L80,20 L0,20 Z" fill="rgba(56,189,248,0.20)"/>
-                </svg>
-              </div>
-            </div>
-            <div class="theme-option-label">Ocean</div>
-            <div class="theme-option-desc">ทะเลลึก</div>
-          </div>
-
-          <!-- SAKURA -->
-          <div class="theme-option" data-theme-value="sakura" onclick="selectTheme('sakura')">
-            <div class="theme-preview theme-preview-sakura">
-              <div class="tp-sidebar"></div>
-              <div class="tp-content">
-                <div class="tp-topbar"></div>
-                <div class="tp-cards">
-                  <div class="tp-card"></div>
-                  <div class="tp-card"></div>
-                </div>
-                <div class="tp-panel"></div>
-              </div>
-              <div class="tp-petals">
-                <span>🌸</span><span>🌸</span><span>🌸</span>
-              </div>
-            </div>
-            <div class="theme-option-label">Sakura</div>
-            <div class="theme-option-desc">ดอกไม้ หวานหวาน</div>
-          </div>
-
-        </div>
       </div>
     </div>
   </div>
