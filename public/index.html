@@ -319,55 +319,58 @@
 
       <!-- ===== WITHDRAW ===== -->
       <div class="page-content page-view" id="withdrawView">
-        <div class="content-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
-            </div>
-            <div class="panel-body">
-              <div class="rfid-scanner">
-                <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
+        <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;">
+          <div>
+            <div class="panel">
+              <div class="panel-header">
+                <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
+              </div>
+              <div class="panel-body">
+                <div class="rfid-scanner">
+                  <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
+                  </div>
+                  <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
+                  <div class="scanner-id" id="withdrawScannedId"></div>
                 </div>
-                <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
-                <div class="scanner-id" id="withdrawScannedId"></div>
               </div>
             </div>
-          </div>
-          <div class="panel" id="withdrawFormPanel" style="display:none;">
+            <div class="panel mt-4" id="withdrawFormPanel" style="display:none;">
+              <div class="panel-header">
+                <h3><i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก</h3>
+              </div>
+              <div class="panel-body">
+                <div id="withdrawProductInfo"></div>
+                <form id="withdrawForm" onsubmit="return false;"><input type="hidden" id="withdrawProductId">
+                  <div class="form-group"><label><i class="fas fa-hashtag"></i> จำนวนที่เบิก</label>
+                    <div class="input-wrapper"><input type="number" id="withdrawQty" min="1" required></div>
+                  </div>
+                  <div class="form-group"><label><i class="fas fa-user"></i> ผู้เบิก</label>
+                    <div class="input-wrapper"><input type="text" id="withdrawUser" required></div>
+                  </div>
+                  <div class="form-group"><label><i class="fas fa-comment"></i> เหตุผล (ไม่บังคับ)</label>
+                    <div class="input-wrapper"><input type="text" id="withdrawReason"></div>
+                  </div>
+                  <button type="submit" class="btn btn-danger" onclick="processWithdraw()"
+                    style="width:100%;padding:16px;font-size:15px;">
+                    <i class="fas fa-arrow-right-from-bracket"></i> ยืนยันเบิกสินค้า
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div><!-- end left col -->
+          <!-- Right col: history table -->
+          <div class="panel">
             <div class="panel-header">
-              <h3><i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก</h3>
+              <h3><i class="fas fa-history text-red"></i> รายการเบิกล่าสุด</h3>
             </div>
-            <div class="panel-body">
-              <div id="withdrawProductInfo"></div>
-              <form id="withdrawForm" onsubmit="return false;"><input type="hidden" id="withdrawProductId">
-                <div class="form-group"><label><i class="fas fa-hashtag"></i> จำนวนที่เบิก</label>
-                  <div class="input-wrapper"><input type="number" id="withdrawQty" min="1" required></div>
-                </div>
-                <div class="form-group"><label><i class="fas fa-user"></i> ผู้เบิก</label>
-                  <div class="input-wrapper"><input type="text" id="withdrawUser" required></div>
-                </div>
-                <div class="form-group"><label><i class="fas fa-comment"></i> เหตุผล (ไม่บังคับ)</label>
-                  <div class="input-wrapper"><input type="text" id="withdrawReason"></div>
-                </div>
-                <button type="submit" class="btn btn-danger" onclick="processWithdraw()"
-                  style="width:100%;padding:16px;font-size:15px;">
-                  <i class="fas fa-arrow-right-from-bracket"></i> ยืนยันเบิกสินค้า
-                </button>
-              </form>
+            <div class="panel-body" style="padding:0;">
+              <table class="data-table">
+                <thead><tr><th>เวลา</th><th>RFID</th><th>สินค้า</th><th>จำนวน</th><th>ผู้เบิก</th><th>เหตุผล</th></tr></thead>
+                <tbody id="withdrawHistoryBody"></tbody>
+              </table>
             </div>
-          </div>
-        </div>
-        <div class="panel mt-4">
-          <div class="panel-header">
-            <h3><i class="fas fa-history text-red"></i> รายการเบิกล่าสุด</h3>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
-              <thead><tr><th>เวลา</th><th>RFID</th><th>สินค้า</th><th>จำนวน</th><th>ผู้เบิก</th><th>เหตุผล</th></tr></thead>
-              <tbody id="withdrawHistoryBody"></tbody>
-            </table>
-          </div>
-        </div>
+          </div><!-- end right col -->
+        </div><!-- end grid -->
       </div>
 
       <!-- ===== RECEIVE ===== -->
