@@ -661,12 +661,12 @@ a{color:var(--accent-cyan);cursor:pointer;text-decoration:none;}
 @media(max-width:900px){ .an2-grid-2{grid-template-columns:1fr;} }
 
 /* Chart container heights */
-.an2-chart-body    { position:relative; height:280px; }
-.an2-chart-body canvas { position:absolute; inset:0; width:100%!important; height:100%!important; }
-.an2-chart-body-sq { position:relative; height:300px; }
-.an2-chart-body-sq canvas { position:absolute; inset:0; width:100%!important; height:100%!important; }
-.an2-chart-body-tall { position:relative; height:320px; }
-.an2-chart-body-tall canvas { position:absolute; inset:0; width:100%!important; height:100%!important; }
+.an2-chart-body    { position:relative; height:280px; overflow:hidden; }
+.an2-chart-body canvas { position:absolute; top:0; left:0; width:100%!important; height:100%!important; }
+.an2-chart-body-sq { position:relative; height:300px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.an2-chart-body-sq canvas { max-width:300px!important; max-height:300px!important; width:auto!important; height:100%!important; position:relative!important; inset:auto!important; }
+.an2-chart-body-tall { position:relative; height:320px; overflow:hidden; }
+.an2-chart-body-tall canvas { position:absolute; top:0; left:0; width:100%!important; height:100%!important; }
 
 /* Period tabs */
 .an2-period-tabs { display:flex; gap:4px; }
