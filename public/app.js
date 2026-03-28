@@ -557,7 +557,7 @@ function renderStats() {
 function renderRecentActivity() {
   const el = document.getElementById('dashRecentActivity');
   if (!el) return;
-  const recent = transactions.slice(0, 8);
+  const recent = transactions.slice(0, 10);
   if (!recent.length) { 
     el.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>${T('dash_no_activity')}</p><small>${T('dash_start_scan')}</small></div>`; 
     return; 
@@ -589,15 +589,17 @@ function renderWithdrawChart() {
     return { day: day.slice(5), outCount, inCount };
   });
   const max = Math.max(...data.map(d => Math.max(d.outCount, d.inCount)), 1);
-  c.innerHTML = data.map(d => `
+  const legend = `<div class="chart-legend"><span class="leg-out">เบิกออก</span><span class="leg-in">รับเข้า</span></div>`;
+  const bars = data.map(d => `
     <div class="chart-bar-group">
-      <div class="chart-bar-label"><span>${d.day}</span><span style="color:var(--accent-red)">${d.outCount || ''}</span></div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+      <div class="chart-bar-label"><span>${d.day}</span><span style="color:var(--accent-red);font-weight:700;">${d.outCount||0}</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
         <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.outCount/max*100}%;background:linear-gradient(90deg,#EF4444,#F87171);"></div></div>
         <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${d.inCount/max*100}%;background:linear-gradient(90deg,#22C55E,#4ADE80);"></div></div>
       </div>
-      <span style="font-size:11px;color:var(--accent-green);font-weight:600;width:28px;text-align:right;">${d.inCount || ''}</span>
+      <span style="font-size:11px;color:var(--accent-green);font-weight:700;width:24px;text-align:right;">${d.inCount||0}</span>
     </div>`).join('');
+  c.innerHTML = legend + bars;
 }
 
 function renderLowStock() {
