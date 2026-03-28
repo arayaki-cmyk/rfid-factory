@@ -469,19 +469,23 @@ a{color:var(--accent);cursor:pointer;text-decoration:none;}
 .an2-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:0;}
 .an2-kpi{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);transition:all .2s;position:relative;overflow:hidden;}
 .an2-kpi::after{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:var(--ka,var(--g-primary));border-radius:3px 3px 0 0;}
-.an2-kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow2);}
+.an2-kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow2);border-color:var(--accent);}
+.an2-kpi:hover .an2-kpi-icon{transform:scale(1.1);}
 .an2-kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.an2-kpi-icon{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:color-mix(in srgb,var(--kc,#5B6AF0) 12%,transparent);color:var(--kc,#5B6AF0);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.an2-kpi-icon{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:var(--accent-soft);color:var(--kc,#5B6AF0);display:flex;align-items:center;justify-content:center;font-size:15px;transition:transform .2s;}
 .an2-kpi-label{font-size:11.5px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px;}
 .an2-kpi-value{font-size:26px;font-weight:800;letter-spacing:-.8px;line-height:1;color:var(--txt1);}
 .an2-kpi-sub{font-size:11px;color:var(--txt3);margin-top:4px;}
+.an2-kpi-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;margin-top:3px;}
+.an2-kpi-trend.up{color:var(--accent-green);}
+.an2-kpi-trend.down{color:var(--accent-red);}
 .an2-panel-full{width:100%;}
 .an2-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 @media(max-width:900px){.an2-grid-2{grid-template-columns:1fr;}}
 .an2-chart-body{position:relative;height:280px;overflow:hidden;}
 .an2-chart-body canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
-.an2-chart-body-sq{position:relative;height:300px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
-.an2-chart-body-sq canvas{max-width:300px!important;max-height:300px!important;width:auto!important;height:100%!important;position:relative!important;inset:auto!important;}
+.an2-chart-body-sq{position:relative;height:280px;overflow:hidden;}
+.an2-chart-body-sq canvas{position:absolute!important;top:0!important;left:0!important;width:100%!important;height:100%!important;}
 .an2-chart-body-tall{position:relative;height:320px;overflow:hidden;}
 .an2-chart-body-tall canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
 .an2-period-tabs{display:flex;gap:4px;}
@@ -648,3 +652,20 @@ tr:hover td {
   background: #1d4ed8;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
+
+/* Stock Health Gauge */
+.an2-health-gauge{display:flex;justify-content:center;margin-bottom:16px;}
+.an2-gauge-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+.an2-gauge-center{position:absolute;text-align:center;pointer-events:none;}
+.an2-gauge-pct{font-size:22px;font-weight:800;color:var(--txt1);letter-spacing:-.5px;display:block;}
+.an2-gauge-sub{font-size:11px;color:var(--txt3);display:block;}
+.an2-health-legend{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.an2-health-item{display:flex;align-items:center;gap:9px;font-size:13px;}
+.an2-health-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.an2-health-lbl{flex:1;color:var(--txt2);font-weight:500;}
+.an2-health-count{font-weight:800;color:var(--txt1);font-family:var(--font-mono);font-size:12px;}
+.an2-health-bar{display:flex;height:8px;border-radius:6px;overflow:hidden;gap:2px;margin-top:4px;}
+.an2-health-bar>div{transition:width .8s cubic-bezier(.34,1.2,.64,1);min-width:2px;}
+
+.an2-heat-leg{display:flex;gap:3px;}
+.an2-heat-leg span{width:16px;height:10px;border-radius:3px;display:inline-block;}
