@@ -161,8 +161,17 @@ function syncAllViews() {
   renderWithdrawChart();
   renderTopWithdraw();
 
-  // Re-render the currently active page so its data is fresh
-  refreshCurrentView();
+  // Re-render current page — but don't disrupt withdraw/receive mid-flow
+  const _wActive = document.getElementById('withdrawFormPanel')?.style.display !== 'none';
+  const _reActive = document.getElementById('receiveExistingPanel')?.style.display !== 'none';
+  const _midFlow = (currentPage === 'withdraw' && _wActive)
+                || (currentPage === 'receive' && _reActive);
+  if (_midFlow) {
+    if (currentPage === 'withdraw') renderWithdrawHist();
+    else if (currentPage === 'receive') renderReceiveHist();
+  } else {
+    refreshCurrentView();
+  }
 }
 
 // Keep datalist options in sync with custom categories from product data
@@ -282,7 +291,7 @@ function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(async () => {
     await loadData(true); // silent refresh — no error toast
-    // Always update dashboard widgets so data is fresh when user navigates back
+    // Always refresh dashboard widgets regardless of current page
     renderStats();
     renderRecentActivity();
     renderLowStock();
@@ -290,9 +299,19 @@ function startAutoRefresh() {
     renderTopWithdraw();
     updateTxBadge();
     updateTodayStats();
-    // Re-render current page if not dashboard (dashboard already handled above)
-    if (currentPage !== 'dashboard') refreshCurrentView();
-    else renderDashboard();
+    // Don't disrupt withdraw/receive if user is mid-scan or mid-form
+    const _wA = document.getElementById('withdrawFormPanel')?.style.display !== 'none';
+    const _rA = document.getElementById('receiveExistingPanel')?.style.display !== 'none';
+    const _mid = (currentPage === 'withdraw' && _wA)
+              || (currentPage === 'receive' && _rA);
+    if (_mid) {
+      if (currentPage === 'withdraw') renderWithdrawHist();
+      else if (currentPage === 'receive') renderReceiveHist();
+    } else if (currentPage === 'dashboard') {
+      renderDashboard();
+    } else {
+      refreshCurrentView();
+    }
   }, 30000); // every 30 seconds
 }
 
@@ -744,11 +763,14 @@ async function deleteProduct(id) {
 // ===== WITHDRAW =====
 function renderWithdraw() {
   renderWithdrawHist();
-  // Reset scanner state
-  const st = document.getElementById('withdrawScannerStatus');
-  if (st) st.textContent = T('withdraw_scan_hint');
-  const sid = document.getElementById('withdrawScannedId');
-  if (sid) sid.textContent = '';
+  // Only reset scanner if no product is currently selected
+  const formPanel = document.getElementById('withdrawFormPanel');
+  if (!formPanel || formPanel.style.display === 'none') {
+    const st = document.getElementById('withdrawScannerStatus');
+    if (st) st.textContent = T('withdraw_scan_hint');
+    const sid = document.getElementById('withdrawScannedId');
+    if (sid) sid.textContent = '';
+  }
 }
 function handleWithdrawScan(uid) {
   const ring = document.getElementById('withdrawScannerRing');
@@ -818,12 +840,16 @@ function renderWithdrawHist() {
 // ===== RECEIVE =====
 function renderReceive() {
   renderReceiveHist();
-  const st = document.getElementById('receiveScannerStatus');
-  if (st) st.textContent = T('receive_scan_hint');
-  const sid = document.getElementById('receiveScannedId');
-  if (sid) sid.textContent = '';
+  // Only reset scanner if no product/form is currently active
   const existPanel = document.getElementById('receiveExistingPanel');
-  if (existPanel) existPanel.style.display = 'none';
+  const isFormActive = existPanel && existPanel.style.display !== 'none';
+  if (!isFormActive) {
+    const st = document.getElementById('receiveScannerStatus');
+    if (st) st.textContent = T('receive_scan_hint');
+    const sid = document.getElementById('receiveScannedId');
+    if (sid) sid.textContent = '';
+    if (existPanel) existPanel.style.display = 'none';
+  }
 }
 function handleReceiveScan(uid) {
   const ring = document.getElementById('receiveScannerRing');
