@@ -84,6 +84,10 @@ const PERMISSIONS = {
   },
 };
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function can(resource, action) {
   const role = currentUser?.role || 'staff';
   const perms = PERMISSIONS[role];
