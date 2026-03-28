@@ -154,10 +154,12 @@ function syncAllViews() {
   renderLiveFeed();
   updateCategoryDatalists();
 
-  // Always keep dashboard widgets fresh (activity, low stock, stats)
+  // Always keep dashboard widgets fresh
   renderRecentActivity();
   renderLowStock();
   renderStats();
+  renderWithdrawChart();
+  renderTopWithdraw();
 
   // Re-render the currently active page so its data is fresh
   refreshCurrentView();
@@ -280,12 +282,18 @@ function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(async () => {
     await loadData(true); // silent refresh — no error toast
-    if (currentPage === 'dashboard') {
-      renderDashboard();
-    }
+    // Always update dashboard widgets so data is fresh when user navigates back
+    renderStats();
+    renderRecentActivity();
+    renderLowStock();
+    renderWithdrawChart();
+    renderTopWithdraw();
     updateTxBadge();
     updateTodayStats();
-  }, 120000); // every 2 minutes (Google Sheets rate limit)
+    // Re-render current page if not dashboard (dashboard already handled above)
+    if (currentPage !== 'dashboard') refreshCurrentView();
+    else renderDashboard();
+  }, 30000); // every 30 seconds
 }
 
 // ===== NAV =====
