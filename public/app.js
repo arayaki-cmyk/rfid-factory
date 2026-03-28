@@ -154,6 +154,11 @@ function syncAllViews() {
   renderLiveFeed();
   updateCategoryDatalists();
 
+  // Always keep dashboard widgets fresh (activity, low stock, stats)
+  renderRecentActivity();
+  renderLowStock();
+  renderStats();
+
   // Re-render the currently active page so its data is fresh
   refreshCurrentView();
 }
