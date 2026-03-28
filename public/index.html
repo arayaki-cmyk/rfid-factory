@@ -319,26 +319,28 @@
 
       <!-- ===== WITHDRAW ===== -->
       <div class="page-content page-view" id="withdrawView">
-        <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;">
-          <div>
-            <div class="panel">
-              <div class="panel-header">
-                <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
-              </div>
-              <div class="panel-body">
-                <div class="rfid-scanner">
-                  <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
-                  </div>
-                  <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
-                  <div class="scanner-id" id="withdrawScannedId"></div>
+        <div style="display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start;">
+          <!-- Left col: scanner + form combined in one panel -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
+            </div>
+            <div class="panel-body">
+              <div class="rfid-scanner">
+                <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
                 </div>
+                <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
+                <div class="scanner-id" id="withdrawScannedId"></div>
               </div>
             </div>
-            <div class="panel mt-4" id="withdrawFormPanel" style="display:none;">
-              <div class="panel-header">
-                <h3><i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก</h3>
+            <!-- Form section: hidden until scanned, no separate panel -->
+            <div id="withdrawFormPanel" style="display:none;">
+              <div style="border-top:1px solid var(--border-color);padding:16px 20px 4px;">
+                <h3 style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;">
+                  <i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก
+                </h3>
               </div>
-              <div class="panel-body">
+              <div style="padding:0 20px 20px;">
                 <div id="withdrawProductInfo"></div>
                 <form id="withdrawForm" onsubmit="return false;"><input type="hidden" id="withdrawProductId">
                   <div class="form-group"><label><i class="fas fa-hashtag"></i> จำนวนที่เบิก</label>
