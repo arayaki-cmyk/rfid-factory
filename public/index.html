@@ -503,57 +503,51 @@
 
       <!-- ===== HISTORY (ข้อมูลย้อนหลัง) ===== -->
       <div class="page-content page-view" id="historyView">
-        <!-- Date Range Filter Bar -->
+        <!-- Filter Bar -->
         <div class="history-filter-section">
-          <!-- แถว 1: วันที่ + ปุ่ม Export -->
-          <div class="hf-row hf-row-top">
-            <div class="hf-date-group">
-              <div class="date-input-group">
-                <label><i class="fas fa-calendar"></i> ตั้งแต่วันที่</label>
-                <input type="date" id="historyDateFrom" onchange="renderHistory()">
-              </div>
-              <span class="hf-date-sep"><i class="fas fa-arrow-right"></i></span>
-              <div class="date-input-group">
-                <label><i class="fas fa-calendar-check"></i> ถึงวันที่</label>
-                <input type="date" id="historyDateTo" onchange="renderHistory()">
-              </div>
+          <div class="date-range-bar">
+            <div class="date-input-group">
+              <label><i class="fas fa-calendar-alt"></i> ตั้งแต่วันที่</label>
+              <input type="date" id="historyDateFrom" onchange="renderHistory()">
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()"><i class="fas fa-download"></i> ส่งออก CSV</button>
-          </div>
-          <!-- แถว 2: Filter chips + Search -->
-          <div class="hf-row hf-row-bottom">
+            <span style="color:var(--txt3);align-self:flex-end;padding-bottom:10px;font-size:12px;">→</span>
+            <div class="date-input-group">
+              <label><i class="fas fa-calendar-check"></i> ถึงวันที่</label>
+              <input type="date" id="historyDateTo" onchange="renderHistory()">
+            </div>
             <div class="filter-chips">
               <button class="filter-chip active" onclick="setHistoryFilter('all', this)">ทั้งหมด</button>
               <button class="filter-chip" onclick="setHistoryFilter('out', this)">เบิกออก</button>
               <button class="filter-chip" onclick="setHistoryFilter('in', this)">รับเข้า</button>
             </div>
-            <div class="search-box history-search">
-              <input type="text" placeholder="ค้นหาสินค้า, RFID, ผู้ใช้..." id="historySearch" oninput="renderHistory()">
-              <i class="fas fa-search"></i>
+            <div class="search-box history-search" style="flex:1;min-width:200px;position:relative;">
+              <i class="fas fa-search search-box-icon" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--txt3);font-size:13px;pointer-events:none;"></i>
+              <input type="text" placeholder="ค้นหาสินค้า, RFID, ผู้ใช้..." id="historySearch" oninput="renderHistory()" style="padding-left:38px;">
             </div>
+            <button class="btn btn-secondary btn-sm" onclick="exportFilteredCSV()"><i class="fas fa-download"></i> ส่งออก CSV</button>
           </div>
         </div>
 
-        <!-- Summary Cards - 4 cards in a row -->
+        <!-- Summary Cards -->
         <div class="history-summary-grid" id="historySummaryGrid"></div>
 
-        <!-- Daily Chart - Full width -->
-        <div class="panel">
+        <!-- Daily Chart -->
+        <div class="panel" style="margin-bottom:22px;">
           <div class="panel-header">
-            <h3><i class="fas fa-chart-column text-cyan"></i> กราฟเปรียบเทียบรายวัน</h3>
+            <h3><i class="fas fa-chart-column" style="color:var(--accent);"></i> กราฟเปรียบเทียบรายวัน</h3>
           </div>
           <div class="panel-body">
             <div class="history-chart" id="historyDailyChart"></div>
           </div>
         </div>
 
-        <!-- Transaction Table - Full width -->
-        <div class="panel">
+        <!-- Transaction Table -->
+        <div class="panel" style="margin-bottom:22px;">
           <div class="panel-header">
-            <h3><i class="fas fa-list-ul text-purple"></i> รายการธุรกรรมย้อนหลัง</h3>
+            <h3><i class="fas fa-list-ul" style="color:var(--accent-purple);"></i> รายการธุรกรรมย้อนหลัง</h3>
             <span class="history-result-count" id="historyResultCount"></span>
           </div>
-          <div class="panel-body" style="padding:0; overflow-x: auto;">
+          <div class="panel-body" style="padding:0;overflow-x:auto;">
             <table class="data-table history-table">
               <thead>
                 <tr><th>วันที่</th><th>เวลา</th><th>ประเภท</th><th>RFID</th><th>สินค้า</th><th>จำนวน</th><th>ผู้ทำรายการ</th><th>หมายเหตุ</th></tr>
@@ -563,13 +557,13 @@
           </div>
         </div>
 
-        <!-- Stock Snapshot Timeline - Full width -->
+        <!-- Stock Snapshot Timeline -->
         <div class="panel">
           <div class="panel-header">
-            <h3><i class="fas fa-timeline text-green"></i> สต็อกสินค้าย้อนหลัง (Snapshot)</h3>
+            <h3><i class="fas fa-layer-group" style="color:var(--accent-green);"></i> สต็อกสินค้าย้อนหลัง (Snapshot)</h3>
             <button class="btn btn-secondary btn-sm" onclick="saveStockSnapshot()"><i class="fas fa-camera"></i> บันทึก Snapshot ตอนนี้</button>
           </div>
-          <div class="panel-body" style="padding:0; overflow-x: auto;">
+          <div class="panel-body" style="padding:0;overflow-x:auto;">
             <table class="data-table snapshot-table">
               <thead>
                 <tr><th>วันที่</th><th>สินค้า</th><th>รหัส</th><th>คงเหลือ ณ วันนั้น</th><th>เทียบปัจจุบัน</th></tr>
