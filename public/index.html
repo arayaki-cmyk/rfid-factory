@@ -146,6 +146,10 @@
           <div class="nav-item" data-page="analytics" onclick="navigateTo('analytics')"><i class="fas fa-chart-pie"></i>
             <span data-i18n="nav_analytics">สรุปภาพรวม</span>
           </div>
+          <div class="nav-item" data-page="shiftReport" onclick="navigateTo('shiftReport')"><i class="fas fa-clipboard-list"></i>
+            <span>รายงานกะ</span></div>
+          <div class="nav-item" data-page="batchScan" onclick="navigateTo('batchScan')"><i class="fas fa-layer-group"></i>
+            <span>Batch Scan</span></div>
           <div class="nav-item" data-page="userLog" onclick="navigateTo('userLog')"><i class="fas fa-user-clock"></i>
             <span data-i18n="nav_userlog">Log ผู้ใช้งาน</span>
           </div>
@@ -182,6 +186,8 @@
         </div>
         <div class="topbar-right">
           <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn" title="Switch to English">EN</button>
+          <button class="topbar-icon-btn" onclick="toggleFullscreen()" id="fullscreenBtn" title="โหมดจอเต็ม"><i class="fas fa-expand"></i></button>
+          <button class="topbar-icon-btn notif-btn" onclick="toggleNotifPanel()" id="notifBtn" title="การแจ้งเตือน"><i class="fas fa-bell"></i><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
           <div class="search-box">
             <input type="text" placeholder="ค้นหาสินค้า..." data-i18n-ph="topbar_search_ph" id="globalSearch"
               oninput="handleGlobalSearch(this.value)">
@@ -319,28 +325,26 @@
 
       <!-- ===== WITHDRAW ===== -->
       <div class="page-content page-view" id="withdrawView">
-        <div style="display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start;">
-          <!-- Left col: scanner + form combined in one panel -->
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
-            </div>
-            <div class="panel-body">
-              <div class="rfid-scanner">
-                <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
+        <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;">
+          <div>
+            <div class="panel">
+              <div class="panel-header">
+                <h3><i class="fas fa-arrow-right-from-bracket text-red"></i> สแกน RFID เพื่อเบิกสินค้า</h3>
+              </div>
+              <div class="panel-body">
+                <div class="rfid-scanner">
+                  <div class="scanner-ring withdraw-mode" id="withdrawScannerRing"><i class="fas fa-satellite-dish"></i>
+                  </div>
+                  <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
+                  <div class="scanner-id" id="withdrawScannedId"></div>
                 </div>
-                <div class="scanner-status" id="withdrawScannerStatus">แตะบัตร RFID เพื่อเบิกสินค้า</div>
-                <div class="scanner-id" id="withdrawScannedId"></div>
               </div>
             </div>
-            <!-- Form section: hidden until scanned, no separate panel -->
-            <div id="withdrawFormPanel" style="display:none;">
-              <div style="border-top:1px solid var(--border-color);padding:16px 20px 4px;">
-                <h3 style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;">
-                  <i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก
-                </h3>
+            <div class="panel mt-4" id="withdrawFormPanel" style="display:none;">
+              <div class="panel-header">
+                <h3><i class="fas fa-clipboard-list text-amber"></i> ข้อมูลการเบิก</h3>
               </div>
-              <div style="padding:0 20px 20px;">
+              <div class="panel-body">
                 <div id="withdrawProductInfo"></div>
                 <form id="withdrawForm" onsubmit="return false;"><input type="hidden" id="withdrawProductId">
                   <div class="form-group"><label><i class="fas fa-hashtag"></i> จำนวนที่เบิก</label>
@@ -677,6 +681,76 @@
         </div>
       </div>
 
+      <!-- ===== BATCH SCAN ===== -->
+      <div class="page-content page-view" id="batchScanView">
+        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;">
+          <div>
+            <div class="panel">
+              <div class="panel-header">
+                <h3><i class="fas fa-layer-group text-purple"></i> Batch Scan</h3>
+                <span class="badge" id="batchCount" style="background:#6366f1;color:#fff;">0 รายการ</span>
+              </div>
+              <div class="panel-body">
+                <div class="rfid-scanner">
+                  <div class="scanner-ring" id="batchScannerRing" style="border-color:#6366f1;"><i class="fas fa-satellite-dish" style="color:#6366f1;"></i></div>
+                  <div class="scanner-status" id="batchScannerStatus">แตะ RFID เพื่อเพิ่มในรายการ</div>
+                  <div class="scanner-id" id="batchScannedId"></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel mt-4">
+              <div class="panel-header"><h3><i class="fas fa-sliders text-cyan"></i> ตั้งค่า</h3></div>
+              <div class="panel-body">
+                <div class="form-group">
+                  <label>ประเภท</label>
+                  <div style="display:flex;gap:8px;">
+                    <button class="btn btn-danger btn-sm batch-type-btn active" id="batchTypeOut" onclick="setBatchType('out')"><i class="fas fa-arrow-right-from-bracket"></i> เบิกออก</button>
+                    <button class="btn btn-secondary btn-sm batch-type-btn" id="batchTypeIn" onclick="setBatchType('in')"><i class="fas fa-arrow-right-to-bracket"></i> รับเข้า</button>
+                  </div>
+                </div>
+                <div class="form-group"><label><i class="fas fa-user"></i> ผู้ดำเนินการ</label>
+                  <div class="input-wrapper"><input type="text" id="batchUser" placeholder="ชื่อผู้ดำเนินการ"></div>
+                </div>
+                <div class="form-group"><label><i class="fas fa-comment"></i> เหตุผล</label>
+                  <div class="input-wrapper"><input type="text" id="batchReason" placeholder="ไม่บังคับ"></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                  <button class="btn btn-secondary btn-sm" style="flex:1" onclick="clearBatch()"><i class="fas fa-trash"></i> ล้าง</button>
+                  <button class="btn btn-primary" style="flex:2;padding:12px;" onclick="confirmBatch()" id="batchConfirmBtn" disabled><i class="fas fa-check"></i> ยืนยัน</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><h3><i class="fas fa-list-check text-green"></i> รายการที่สแกน</h3></div>
+            <div class="panel-body" style="padding:0;">
+              <table class="data-table">
+                <thead><tr><th>#</th><th>สินค้า</th><th>RFID</th><th>คงเหลือ</th><th>จำนวน</th><th></th></tr></thead>
+                <tbody id="batchTableBody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;"><i class="fas fa-layer-group" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3;"></i>ยังไม่มีรายการ</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SHIFT REPORT ===== -->
+      <div class="page-content page-view" id="shiftReportView">
+        <div class="filter-bar">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <label style="font-weight:600;font-size:13px;">วันที่:</label>
+            <input type="date" id="shiftDate" class="input-wrapper" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;" onchange="renderShiftReport()">
+            <div style="display:flex;gap:6px;">
+              <button class="filter-chip active" onclick="setShiftFilter('all',this)">ทั้งวัน</button>
+              <button class="filter-chip" onclick="setShiftFilter('morning',this)">เช้า 06-14</button>
+              <button class="filter-chip" onclick="setShiftFilter('afternoon',this)">บ่าย 14-22</button>
+              <button class="filter-chip" onclick="setShiftFilter('night',this)">ดึก 22-06</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="exportShiftPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+        </div>
+        <div id="shiftReportContent"></div>
+      </div>
+
       <!-- ===== USER MANAGEMENT ===== -->
       <div class="page-content page-view" id="userManagementView">
         <div class="filter-bar">
@@ -696,6 +770,32 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- ===== NOTIFICATION PANEL ===== -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <h3><i class="fas fa-bell text-amber"></i> การแจ้งเตือน</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="clearAllNotifs()">ล้างทั้งหมด</button>
+        <button class="notif-close" onclick="toggleNotifPanel()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-empty"><i class="fas fa-bell-slash"></i><p>ยังไม่มีการแจ้งเตือน</p></div>
+    </div>
+  </div>
+  <div class="notif-overlay" id="notifOverlay" onclick="toggleNotifPanel()"></div>
+
+  <!-- ===== KPI FULLSCREEN ===== -->
+  <div class="kpi-fullscreen" id="kpiFullscreen" style="display:none;">
+    <div class="kpi-fs-header">
+      <div class="kpi-fs-logo"><i class="fas fa-conveyor-belt"></i> RFID Factory</div>
+      <div class="kpi-fs-clock" id="kpiFsClock"></div>
+      <button onclick="exitFullscreen()" class="kpi-fs-exit"><i class="fas fa-compress"></i> ออก</button>
+    </div>
+    <div class="kpi-fs-grid" id="kpiFsGrid"></div>
+    <div class="kpi-fs-ticker" id="kpiFsTicker"></div>
   </div>
 
   <!-- ===== MODALS ===== -->
