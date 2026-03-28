@@ -1061,7 +1061,7 @@ function renderHistoryChart() {
   });
 
   const max = Math.max(...data.map(d => Math.max(d.outQty, d.inQty)), 1);
-  const BAR_H = 140; // px — matches CSS .hc-bars height
+  const BAR_H = 140;
 
   const bars = data.map(d => {
     const outH = Math.max(Math.round(d.outQty / max * BAR_H), d.outQty > 0 ? 4 : 0);
@@ -1156,7 +1156,7 @@ async function autoSaveStockSnapshot() {
 function renderSnapshotTimeline() {
   const b = document.getElementById('snapshotTableBody');
   if (!b) return;
-  if (!stockSnapshots.length) {
+  if (!stockSnapshots || stockSnapshots.length === 0) {
     b.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px;"><i class="fas fa-camera" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4;"></i>${T('hist_snapshot_empty')}<br><small>${T('hist_snapshot_hint')}</small></td></tr>`;
     return;
   }
@@ -1182,16 +1182,15 @@ function renderSnapshotTimeline() {
       }
       html += `<tr>
         <td>${date}</td>
-        <td class="product-name">${s.name}</td>
-        <td>${s.sku}</td>
-        <td><strong>${s.quantity}</strong></td>
+        <td class="product-name">${s.name || '-'}</td>
+        <td>${s.sku || '-'}</td>
+        <td><strong>${s.quantity || 0}</strong></td>
         <td>${diffLabel}</td>
       </tr>`;
     });
   });
   b.innerHTML = html;
 }
-
 // =========================================================
 // ANALYTICS PAGE — สรุปภาพรวม
 // =========================================================
