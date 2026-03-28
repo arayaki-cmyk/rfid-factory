@@ -691,7 +691,7 @@ function renderRecentActivity() {
     return { time: l.time||'', icon, iconClass, badge, title: escapeHtml(l.user||'ระบบ'), sub: escapeHtml(l.detail||'') };
   });
 
-  const all = [...txItems, ...logItems].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 12);
+  const all = [...txItems, ...logItems].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
 
   if (!all.length) {
     el.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>${T('dash_no_activity')}</p><small>${T('dash_start_scan')}</small></div>`;
