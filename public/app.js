@@ -514,7 +514,7 @@ function updateReaderStatus(connected) {
 
 function showScanningIndicator() {
   // Show visual feedback that digits are being received
-  const indicators = ['withdrawScannerStatus', 'receiveScannerStatus'];
+  const indicators = ['withdrawScannerStatus', 'receiveScannerStatus', 'batchScannerStatus'];
   indicators.forEach(id => {
     const el = document.getElementById(id);
     if (el && el.closest('.page-view.active')) {
@@ -536,6 +536,7 @@ function processRfidScan(uid) {
   const pid = activePage.id;
   if (pid === 'withdrawView') handleWithdrawScan(uid);
   else if (pid === 'receiveView') handleReceiveScan(uid);
+  else if (pid === 'batchScanView') handleBatchScan(uid);
   else {
     const p = findByRfid(uid);
     showToast(p ? 'info' : 'warning', p ? `${T('msg_scan_found')}: ${p.name} (${p.sku}) — ${T('msg_scan_stock')} ${p.quantity} ${p.unit}` : `${T('msg_rfid_not_found')}: ${uid}`);
@@ -1558,7 +1559,7 @@ function toggleFullscreen() {
   const el = document.getElementById('kpiFullscreen');
   const btn = document.getElementById('fullscreenBtn');
   if (!el) return;
-  const isShowing = el.style.display !== 'none';
+  const isShowing = el.style.display === 'flex';
   if (isShowing) {
     exitFullscreen();
   } else {
@@ -1580,6 +1581,14 @@ function exitFullscreen() {
   if (btn) btn.innerHTML = '<i class="fas fa-expand"></i>';
   if (kpiClockInterval) { clearInterval(kpiClockInterval); kpiClockInterval = null; }
 }
+
+// Escape key exits fullscreen
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const fs = document.getElementById('kpiFullscreen');
+    if (fs && fs.style.display === 'flex') exitFullscreen();
+  }
+});
 
 function renderKpiFullscreen() {
   const grid = document.getElementById('kpiFsGrid');
