@@ -1631,30 +1631,27 @@ let kpiClockInterval = null;
 function toggleFullscreen() {
   const el = document.getElementById('kpiFullscreen');
   const btn = document.getElementById('fullscreenBtn');
+  const exitBtn = document.getElementById('kpiFsExitBtn');
   if (!el) return;
   if (el.style.display === 'flex') { exitFullscreen(); return; }
 
   el.style.display = 'flex';
   if (btn) btn.innerHTML = '<i class="fas fa-compress"></i>';
+  if (exitBtn) exitBtn.style.display = 'flex';
 
-  // Hide mobile bottom nav so it doesn't overlap the exit button
+  // Hide mobile bottom nav
   const mbn = document.getElementById('mobileBottomNav');
   if (mbn) mbn.style.display = 'none';
 
-  // Blur rfidHiddenInput so it doesn't steal click events
+  // Blur rfidHiddenInput
   const rfidInp = document.getElementById('rfidHiddenInput');
   if (rfidInp) rfidInp.blur();
 
-  // Initial render
   renderKpiFullscreen();
   updateKpiFsClock();
 
-  // Clock updates every second
-  kpiClockInterval = setInterval(() => {
-    updateKpiFsClock();
-  }, 1000);
+  kpiClockInterval = setInterval(() => { updateKpiFsClock(); }, 1000);
 
-  // Data refresh every 15 seconds
   if (window._kpiDataInterval) clearInterval(window._kpiDataInterval);
   window._kpiDataInterval = setInterval(() => { renderKpiFullscreen(); }, 15000);
 }
@@ -1662,8 +1659,10 @@ function toggleFullscreen() {
 function exitFullscreen() {
   const el = document.getElementById('kpiFullscreen');
   const btn = document.getElementById('fullscreenBtn');
+  const exitBtn = document.getElementById('kpiFsExitBtn');
   if (el) el.style.display = 'none';
   if (btn) btn.innerHTML = '<i class="fas fa-expand"></i>';
+  if (exitBtn) exitBtn.style.display = 'none';
   if (kpiClockInterval) { clearInterval(kpiClockInterval); kpiClockInterval = null; }
   if (window._kpiDataInterval) { clearInterval(window._kpiDataInterval); window._kpiDataInterval = null; }
 
