@@ -150,6 +150,8 @@
             <span>รายงานกะ</span></div>
           <div class="nav-item" data-page="batchScan" onclick="navigateTo('batchScan')"><i class="fas fa-layer-group"></i>
             <span>Batch Scan</span></div>
+          <div class="nav-item" data-page="purchaseOrder" onclick="navigateTo('purchaseOrder')"><i class="fas fa-file-invoice"></i>
+            <span>ใบสั่งซื้อ (PO)</span> <span class="badge" id="poBadge" style="display:none;"></span></div>
           <div class="nav-item" data-page="userLog" onclick="navigateTo('userLog')"><i class="fas fa-user-clock"></i>
             <span data-i18n="nav_userlog">Log ผู้ใช้งาน</span>
           </div>
@@ -751,6 +753,31 @@
         <div id="shiftReportContent"></div>
       </div>
 
+      <!-- ===== PURCHASE ORDER ===== -->
+      <div class="page-content page-view" id="purchaseOrderView">
+        <div class="filter-bar">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="filter-chip active" onclick="setPOFilter('all',this)">ทั้งหมด</button>
+            <button class="filter-chip" onclick="setPOFilter('pending',this)">รอดำเนินการ</button>
+            <button class="filter-chip" onclick="setPOFilter('approved',this)">อนุมัติแล้ว</button>
+            <button class="filter-chip" onclick="setPOFilter('received',this)">รับของแล้ว</button>
+            <button class="filter-chip" onclick="setPOFilter('cancelled',this)">ยกเลิก</button>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openPOModal()">
+            <i class="fas fa-plus"></i> สร้าง PO ใหม่
+          </button>
+        </div>
+        <div class="po-summary-row" id="poSummaryRow"></div>
+        <div class="panel">
+          <div class="panel-body" style="padding:0;">
+            <table class="data-table">
+              <thead><tr><th>เลขที่ PO</th><th>ซัพพลายเออร์</th><th>รายการ</th><th>มูลค่า</th><th>สถานะ</th><th>วันที่</th><th>ผู้สร้าง</th><th>จัดการ</th></tr></thead>
+              <tbody id="poTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== USER MANAGEMENT ===== -->
       <div class="page-content page-view" id="userManagementView">
         <div class="filter-bar">
@@ -799,6 +826,60 @@
     </div>
     <div class="kpi-fs-grid" id="kpiFsGrid"></div>
     <div class="kpi-fs-ticker" id="kpiFsTicker"></div>
+  </div>
+
+  <!-- PO Create/Edit Modal -->
+  <div class="modal-overlay" id="poModal">
+    <div class="modal" style="max-width:720px;width:100%;">
+      <div class="modal-header">
+        <h3 id="poModalTitle"><i class="fas fa-file-invoice text-cyan"></i> สร้างใบสั่งซื้อใหม่</h3>
+        <button class="modal-close" onclick="closeModal('poModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editPOId">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label><i class="fas fa-building"></i> ซัพพลายเออร์ *</label>
+            <div class="input-wrapper"><input type="text" id="poSupplier" placeholder="ชื่อบริษัท/ผู้ขาย"></div>
+          </div>
+          <div class="form-group"><label><i class="fas fa-comment"></i> หมายเหตุ</label>
+            <div class="input-wrapper"><input type="text" id="poNote" placeholder="ไม่บังคับ"></div>
+          </div>
+        </div>
+        <div style="margin-top:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <label style="font-weight:700;font-size:13px;"><i class="fas fa-list"></i> รายการสินค้า</label>
+            <button class="btn btn-secondary btn-sm" onclick="addPOItem()"><i class="fas fa-plus"></i> เพิ่มรายการ</button>
+          </div>
+          <table class="data-table" style="margin:0;">
+            <thead><tr><th>สินค้า</th><th>จำนวน</th><th>หน่วย</th><th>ราคา/หน่วย (฿)</th><th>รวม</th><th></th></tr></thead>
+            <tbody id="poItemsBody"></tbody>
+          </table>
+          <div style="text-align:right;margin-top:10px;padding:10px 16px;background:var(--surface);border-radius:8px;">
+            <span style="font-size:13px;color:var(--text-muted);">มูลค่ารวม:</span>
+            <span id="poGrandTotal" style="font-size:20px;font-weight:800;color:var(--accent);margin-left:12px;">฿0</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border);">
+        <button class="btn btn-secondary" onclick="closeModal('poModal')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="savePO()"><i class="fas fa-save"></i> บันทึก PO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PO Detail Modal -->
+  <div class="modal-overlay" id="poDetailModal">
+    <div class="modal" style="max-width:760px;width:100%;">
+      <div class="modal-header">
+        <h3 id="poDetailTitle"><i class="fas fa-file-invoice text-cyan"></i> รายละเอียด PO</h3>
+        <button class="modal-close" onclick="closeModal('poDetailModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="poDetailBody" style="padding:20px;"></div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border);">
+        <button class="btn btn-secondary" onclick="closeModal('poDetailModal')">ปิด</button>
+        <button class="btn btn-secondary" onclick="printCurrentPO()"><i class="fas fa-print"></i> พิมพ์</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== MODALS ===== -->
