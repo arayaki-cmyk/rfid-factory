@@ -167,6 +167,32 @@ let autoRefreshInterval = null;
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
+  // Push initial history state so Android back button closes sidebar/modals instead of leaving page
+  if (window.history && window.history.pushState) {
+    window.history.pushState({ rfidApp: true }, '');
+    window.addEventListener('popstate', function(e) {
+      // If sidebar is open — close it
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar && sidebar.classList.contains('open')) {
+        toggleSidebar();
+        window.history.pushState({ rfidApp: true }, '');
+        return;
+      }
+      // If a modal is open — close it
+      const openModal = document.querySelector('.modal-overlay.active');
+      if (openModal) {
+        openModal.classList.remove('active');
+        window.history.pushState({ rfidApp: true }, '');
+        return;
+      }
+      // If notif panel open — close it
+      if (notifPanelOpen) {
+        toggleNotifPanel();
+        window.history.pushState({ rfidApp: true }, '');
+        return;
+      }
+    });
+  }
   loadLanguage();
   loadTheme();
   await loadData();
@@ -310,6 +336,8 @@ function updateTxBadge() {
 // ===== AUTH =====
 async function handleLogin(e) {
   e.preventDefault();
+  // Blur active input to hide virtual keyboard on mobile before transition
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   const btn = e.target.querySelector('button[type="submit"]');
   const u = document.getElementById('loginEmail').value.trim();
   const p = document.getElementById('loginPassword').value;
@@ -355,6 +383,13 @@ function logout() {
   // Reset all live state
   liveFeedEntries = [];
   currentPage = 'dashboard';
+
+  // Close any open sidebar / modals / panels
+  document.getElementById('sidebar').classList.remove('open');
+  document.body.classList.remove('sidebar-open');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
   
   // Stop auto-refresh
   if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
@@ -483,6 +518,7 @@ function navigateTo(page) {
     history: ['page_history', 'page_history_bread'],
     analytics: ['page_analytics', 'page_analytics_bread'],
     userLog: ['page_userlog', 'page_userlog_bread'], userManagement: ['page_usermgmt', 'page_usermgmt_bread'],
+    batchScan: ['nav_batch_scan', 'nav_batch_scan'], shiftReport: ['nav_shift_report', 'nav_shift_report'],
   };
   const [tKey, bKey] = titles[page] || [page, page];
   document.getElementById('pageTitle').textContent = T(tKey);
@@ -501,10 +537,23 @@ function navigateTo(page) {
   updateTodayStats();
   refocusRfid();
   syncMobileNav(page);
-  // Close mobile sidebar if open
-  document.getElementById('sidebar').classList.remove('open');
+  // Scroll to top on page change
+  const mc = document.querySelector('.main-content');
+  if (mc) mc.scrollTo({ top: 0, behavior: 'smooth' });
+  // Close mobile sidebar if open + unlock scroll
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.remove('open');
+  document.body.classList.remove('sidebar-open');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebarOverlay) sidebarOverlay.classList.remove('active');
 }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sidebar.classList.toggle('open');
+  document.body.classList.toggle('sidebar-open', isOpen);
+  if (overlay) overlay.classList.toggle('active', isOpen);
+}
 
 // ==========================================
 // USB RFID READER — REAL DEVICE DETECTION
@@ -513,7 +562,10 @@ function initRfidReader() {
   document.addEventListener('keydown', handleRfidKey);
   // Use mousedown (not click) so button onclick fires BEFORE refocus
   document.addEventListener('mousedown', refocusRfid);
-  document.addEventListener('touchend', refocusRfid);
+  // touchend: only refocus on non-touch devices (prevent keyboard fight on mobile)
+  if (!('ontouchstart' in window)) {
+    document.addEventListener('touchend', refocusRfid);
+  }
 
   updateReaderStatus(false);
   readerCheckInterval = setInterval(() => {
@@ -524,6 +576,9 @@ function initRfidReader() {
 }
 
 function refocusRfid(e) {
+  // Skip refocus on touch/mobile devices entirely — let user interact with forms freely
+  if (window.matchMedia('(max-width: 768px)').matches) return;
+
   // Don't steal focus if the user clicked a button, link, or interactive element
   const target = e?.target;
   if (target) {
@@ -931,6 +986,9 @@ function editProduct(id) {
   openModal('addProductModal');
 }
 async function saveProduct() {
+  const saveBtn = document.querySelector('#addProductModal .btn-primary');
+  if (saveBtn && saveBtn.disabled) return;
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...'; }
   const id = document.getElementById('editProductId').value;
   if (id && !can('products', 'edit'))   { showToast('error', 'ไม่มีสิทธิ์แก้ไขสินค้า'); return; }
   if (!id && !can('products', 'add'))   { showToast('error', 'ไม่มีสิทธิ์เพิ่มสินค้า'); return; }
@@ -1013,6 +1071,9 @@ function showWithdrawForm(id) {
 }
 async function processWithdraw() {
   if (!can('withdraw', 'perform')) { showToast('error', 'ไม่มีสิทธิ์เบิกสินค้า'); return; }
+  const btn = document.querySelector('#withdrawForm button[onclick]');
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...'; }
   const id = parseInt(document.getElementById('withdrawProductId').value);
   const qty = parseInt(document.getElementById('withdrawQty').value);
   const user = document.getElementById('withdrawUser').value.trim();
@@ -1039,7 +1100,12 @@ async function processWithdraw() {
     const sid = document.getElementById('withdrawScannedId');
     if (sid) sid.textContent = '';
     syncAllViews();
-  } catch (err) { showToast('error', err.message); }
+  } catch (err) {
+    showToast('error', err.message);
+  } finally {
+    const btn2 = document.querySelector('#withdrawForm button[onclick]');
+    if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="fas fa-arrow-right-from-bracket"></i> ยืนยันเบิกสินค้า'; }
+  }
 }
 function renderWithdrawHist() {
   const b = document.getElementById('withdrawHistoryBody');
@@ -1096,6 +1162,9 @@ function showReceiveForm(id) {
 }
 async function processReceive() {
   if (!can('receive', 'perform')) { showToast('error', 'ไม่มีสิทธิ์รับสินค้าเข้า'); return; }
+  const btn = document.querySelector('#receiveExistingForm button[onclick]');
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...'; }
   const id = parseInt(document.getElementById('receiveProductId').value);
   const qty = parseInt(document.getElementById('receiveQty').value);
   const p = products.find(x => x.id === id); if (!p || !qty || qty < 1) { showToast('error', T('msg_specify_qty')); return; }
@@ -1114,9 +1183,17 @@ async function processReceive() {
     const st = document.getElementById('receiveScannerStatus');
     if (st) st.textContent = T('receive_scan_hint');
     syncAllViews();
-  } catch (err) { showToast('error', err.message); }
+  } catch (err) {
+    showToast('error', err.message);
+  } finally {
+    const btn2 = document.querySelector('#receiveExistingForm button[onclick]');
+    if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> ยืนยันรับสินค้าเข้า'; }
+  }
 }
 async function addProductFromWarehouse() {
+  const whBtn = document.querySelector('#whAddProductForm button[onclick]');
+  if (whBtn && whBtn.disabled) return;
+  if (whBtn) { whBtn.disabled = true; whBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...'; }
   const d = {
     rfid: document.getElementById('whNewRfid').value.trim(), sku: document.getElementById('whNewSku').value.trim(),
     name: document.getElementById('whNewName').value.trim(), category: document.getElementById('whNewCategory').value,
@@ -1200,6 +1277,9 @@ function editUser(id) {
   openModal('addUserModal');
 }
 async function saveUser() {
+  const saveBtn = document.querySelector('#addUserModal .btn-primary');
+  if (saveBtn && saveBtn.disabled) return;
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...'; }
   const uid = document.getElementById('editUserId')?.value;
   if (uid && !can('users', 'edit'))   { showToast('error', 'ไม่มีสิทธิ์แก้ไขผู้ใช้'); return; }
   if (!uid && !can('users', 'add'))   { showToast('error', 'ไม่มีสิทธิ์เพิ่มผู้ใช้'); return; }
@@ -1242,13 +1322,21 @@ function handleGlobalSearch(q) {
 // ===== MODAL =====
 function openModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.add('show');
+  if (el) el.classList.add('active');
 }
 function closeModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.remove('show');
+  if (el) el.classList.remove('active');
   refocusRfid();
 }
+
+// Close modal when tapping the dark backdrop (mobile-friendly)
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('active')) {
+    e.target.classList.remove('active');
+    refocusRfid();
+  }
+});
 
 // ===== TOAST =====
 
@@ -1320,6 +1408,13 @@ function clearAllNotifs() {
 }
 
 function toggleNotifPanel() {
+  // Close sidebar if open on mobile
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.body.classList.remove('sidebar-open');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  }
   notifPanelOpen = !notifPanelOpen;
   const panel = document.getElementById('notifPanel');
   const overlay = document.getElementById('notifOverlay');
@@ -1453,6 +1548,8 @@ function clearBatch() {
 }
 
 async function confirmBatch() {
+  const btn = document.getElementById('batchConfirmBtn');
+  if (btn && btn.disabled) return;
   if (!batchItems.length) return;
   const user = document.getElementById('batchUser').value.trim() || currentUser?.name || 'ระบบ';
   const reason = document.getElementById('batchReason').value.trim();
