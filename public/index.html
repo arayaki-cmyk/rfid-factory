@@ -792,7 +792,9 @@
     <div class="kpi-fs-header">
       <div class="kpi-fs-logo"><i class="fas fa-conveyor-belt"></i> RFID Factory</div>
       <div class="kpi-fs-clock" id="kpiFsClock"></div>
-      <button onclick="exitFullscreen()" class="kpi-fs-exit"><i class="fas fa-compress"></i> ออก</button>
+      <button onclick="exitFullscreen()" class="kpi-fs-exit" style="position:relative;z-index:10200;cursor:pointer;pointer-events:all;">
+        <i class="fas fa-compress"></i> ออก (ESC)
+      </button>
     </div>
     <div class="kpi-fs-grid" id="kpiFsGrid"></div>
     <div class="kpi-fs-ticker" id="kpiFsTicker"></div>
