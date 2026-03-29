@@ -1015,33 +1015,675 @@ tr.row-warn td{background:rgba(239,68,68,.05);color:#EF4444;}
   .tw-bar-track { display: none; }
 }
 
-/* Extra small: < 400px */
-@media (max-width: 400px) {
-  .stats-grid { grid-template-columns: 1fr 1fr !important; }
-  .stat-card .value { font-size: 20px !important; }
-  .history-summary-grid { grid-template-columns: 1fr !important; }
-  .an2-kpi-grid { grid-template-columns: 1fr !important; }
-  .mbn-item span { font-size: 9px; }
+/* =======================================================
+   RFID Factory — Mobile UI Enhancements v2.0
+   ปรับปรุงประสบการณ์ใช้งานบนมือถือ
+   ======================================================= */
+
+/* ── Global touch improvements ────────────────────────── */
+* { -webkit-tap-highlight-color: transparent; }
+input, select, textarea, button { touch-action: manipulation; }
+button, [role="button"] { cursor: pointer; }
+
+/* ── Safe area awareness ──────────────────────────────── */
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --nav-h: 64px;
 }
 
-/* ── Offline banner adjustments ─────────────────────── */
-#offlineBanner {
+/* ══════════════════════════════════════════════════════
+   📱 MOBILE BOTTOM NAV — v2 (ปรับปรุง)
+══════════════════════════════════════════════════════ */
+.mobile-bottom-nav {
+  height: calc(56px + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255,255,255,0.96) !important;
+  border-top: 1px solid rgba(0,0,0,0.06) !important;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.08) !important;
+}
+
+.mbn-item {
+  min-height: 46px;
+  padding: 4px 2px;
+  position: relative;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* Active pill indicator */
+.mbn-item.active::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 0 0 4px 4px;
+  animation: mbnPillIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes mbnPillIn {
+  from { width: 0; opacity: 0; }
+  to   { width: 32px; opacity: 1; }
+}
+
+.mbn-item i {
+  font-size: 18px;
+  line-height: 1;
+  display: block;
+}
+
+.mbn-item span {
+  font-size: 9.5px;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.mbn-item.active {
+  color: var(--accent) !important;
+}
+
+/* ── Push content above bottom nav on all relevant containers ── */
+@media (max-width: 768px) {
+  .main-content { padding-bottom: calc(64px + var(--safe-bottom)) !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🔐 LOGIN PAGE — Mobile Optimized
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .auth-container {
+    align-items: flex-start;
+    padding-top: calc(32px + var(--safe-top));
+    padding: calc(24px + var(--safe-top)) 16px 24px;
+  }
+  
+  .auth-card {
+    padding: 32px 24px;
+    border-radius: 20px;
+    max-width: 100%;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+  }
+  
+  .logo { margin-bottom: 28px; }
+  .logo h1 { font-size: 20px; }
+  .logo .tagline { font-size: 12px; }
+  .logo-icon { width: 48px; height: 48px; font-size: 20px; }
+  
+  .input-wrapper input, .input-wrapper select {
+    padding: 13px 14px;
+    font-size: 16px; /* prevent iOS zoom */
+    border-radius: 10px;
+  }
+  
+  .btn-login { padding: 14px 18px; font-size: 15px; }
+  
+  .demo-badges { gap: 6px; }
+  .demo-badge { padding: 7px 14px; font-size: 12px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🔝 TOPBAR — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .topbar {
+    height: 52px;
+    padding: 0 14px;
+    gap: 10px;
+    top: 0;
+    background: rgba(255,255,255,0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+  }
+  
+  .topbar-left { gap: 10px; }
+  .topbar-left h1 { font-size: 15px; font-weight: 700; }
+  .topbar-right { gap: 6px; }
+  
+  .mobile-toggle {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--surface);
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+  
+  .lang-toggle, .topbar-icon-btn {
+    width: 34px; height: 34px;
+    font-size: 13px;
+    border-radius: 9px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   📊 STAT CARDS — Mobile (ปรับปรุง)
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 16px;
+  }
+  
+  .stat-card {
+    padding: 14px 12px !important;
+    gap: 10px;
+    border-radius: 14px;
+  }
+  
+  .stat-card:hover { transform: none; } /* disable hover on mobile */
+  
+  .stat-icon { width: 38px; height: 38px; font-size: 16px; border-radius: 10px; }
+  .stat-info .value { font-size: 20px !important; }
+  .stat-info h4 { font-size: 10px !important; }
+  .stat-info .sub { font-size: 10.5px; }
+}
+
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr 1fr !important; }
+  .stat-info .value { font-size: 18px !important; }
+  .stat-card { padding: 12px 10px !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🎛️ CONVEYOR BELT — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .conveyor-monitor { border-radius: 14px; }
+  .conveyor-monitor-header { padding: 12px 14px; }
+  .conveyor-monitor-header h3 { font-size: 13px; }
+  .conveyor-belt-area { padding: 12px 14px !important; }
+  .belt-track { height: 48px !important; }
+  .conveyor-stats {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .conveyor-stat {
+    padding: 10px 14px !important;
+    min-width: 110px;
+    font-size: 11.5px !important;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+  .conveyor-stat .label { font-size: 10px; }
+  .conveyor-stat .val { font-size: 13px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   📋 PANELS — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .panel { border-radius: 14px; }
+  .panel-header { padding: 12px 14px; }
+  .panel-header h3 { font-size: 13px; }
+  .panel-body { padding: 12px 14px; }
+  .page-content { padding: 12px !important; gap: 12px !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   📦 WITHDRAW / RECEIVE — Fix inline grid on mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Override hardcoded inline grid on withdraw + batchScan */
+  #withdrawView > div[style],
+  #batchScanView > div[style] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  
+  /* Scanner panel improvement */
+  .rfid-scanner { padding: 18px 0; }
+  .scanner-ring {
+    width: 88px !important;
+    height: 88px !important;
+    font-size: 32px !important;
+    border-radius: 50%;
+  }
+  .scanner-status { font-size: 13px; }
+  
+  /* Compact scanner for receive */
+  .rfid-scanner-compact {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+  }
+  .scanner-ring-sm { flex-shrink: 0; }
+}
+
+/* ══════════════════════════════════════════════════════
+   📱 DATA TABLES — Mobile card style
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .panel-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  
+  /* Tables scroll horizontally */
+  .data-table { min-width: 520px; }
+  .data-table th, .data-table td {
+    padding: 10px 12px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+  .data-table th { font-size: 10.5px; }
+  
+  /* Scroll hint on tables */
+  .panel-body:has(.data-table)::after {
+    content: '';
+    display: block;
+    height: 1px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   🔍 FILTER BAR — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    gap: 8px !important;
+    /* hide scrollbar but keep scrollable */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  
+  .filter-chips {
+    flex-wrap: nowrap;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .filter-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 7px 13px;
+    font-size: 12px;
+    min-height: 34px;
+  }
+  
+  .filter-bar .search-box { flex-shrink: 0; min-width: 140px; }
+  .filter-bar .search-box input { width: 140px; font-size: 14px; }
+  
+  /* Add product button */
+  .filter-bar > .btn { flex-shrink: 0; white-space: nowrap; }
+}
+
+/* ══════════════════════════════════════════════════════
+   💬 MODALS — Mobile bottom sheet
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  .modal {
+    max-width: 100% !important;
+    max-height: 94vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    animation: mobileModalUp .32s cubic-bezier(.34,1.1,.64,1) !important;
+    padding-bottom: var(--safe-bottom);
+  }
+  @keyframes mobileModalUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  
+  /* Drag handle indicator */
+  .modal-header::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    margin: 0 auto 12px;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .modal-header { position: relative; padding-top: 28px; }
+  
+  .modal-body { padding: 16px 18px; }
+  .modal-footer {
+    padding: 12px 18px;
+    flex-direction: column;
+  }
+  .modal-footer .btn { width: 100%; justify-content: center; }
+  
+  /* Larger inputs in modal (prevent iOS zoom) */
+  .modal-body .input-wrapper input,
+  .modal-body .input-wrapper select,
+  .modal-body .input-wrapper textarea {
+    font-size: 16px !important;
+    padding: 12px 14px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   🔔 TOAST — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .toast-container {
+    top: auto !important;
+    bottom: calc(64px + var(--safe-bottom) + 8px) !important;
+    right: 10px !important;
+    left: 10px !important;
+  }
+  .toast {
+    min-width: unset !important;
+    width: 100%;
+    font-size: 13px;
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   📈 ANALYTICS — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .an2-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .an2-kpi { padding: 14px 14px; border-radius: 14px; }
+  .an2-kpi-value { font-size: 22px; }
+  .an2-grid-2 { grid-template-columns: 1fr !important; gap: 12px; }
+  .an2-chart-body { height: 220px; }
+  .an2-chart-body-sq { height: 220px; }
+  .an2-chart-body-tall { height: 240px; }
+  
+  /* Heatmap: 12 cols, smaller cells */
+  .an2-heatmap {
+    grid-template-columns: repeat(12,1fr) !important;
+    gap: 3px;
+  }
+  .an2-heat-cell { min-height: 40px; padding: 4px 1px; }
+  .an2-heat-h { font-size: 8px; }
+  .an2-heat-n { font-size: 10px; }
+  
+  .an2-insights-grid { grid-template-columns: 1fr !important; }
+  .an2-period-tabs { gap: 3px; }
+  .an2-tab { padding: 4px 10px; font-size: 11px; }
+}
+
+@media (max-width: 400px) {
+  .an2-kpi-grid { grid-template-columns: 1fr !important; }
+  .an2-heatmap { grid-template-columns: repeat(8,1fr) !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   📆 HISTORY PAGE — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .history-filter-section { padding: 14px 14px; }
+  .date-range-bar { flex-direction: column !important; gap: 10px !important; }
+  .date-input-group { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+  .date-input-group input[type="date"] { min-width: unset; flex: 1; font-size: 14px; }
+  
+  .history-summary-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .history-summary-card { padding: 14px 12px; border-radius: 14px; gap: 10px; }
+  .hsc-icon { width: 40px; height: 40px; font-size: 16px; border-radius: 12px; }
+  .hsc-value { font-size: 22px; }
+  .hsc-info h4 { font-size: 10px; }
+  
+  .history-search { max-width: 100% !important; width: 100% !important; }
+  .history-table, .snapshot-table { min-width: 680px; }
+}
+
+@media (max-width: 400px) {
+  .history-summary-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🗓️ SHIFT REPORT — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .shift-kpi-row { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .shift-kpi { padding: 14px 12px; border-radius: 14px; }
+  .shift-kpi-val { font-size: 26px; }
+  .shift-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .shift-meta { text-align: left; }
+}
+
+/* ══════════════════════════════════════════════════════
+   📲 BATCH SCAN — Mobile (hardcoded grid fix)
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  #batchScanView > div { gap: 12px !important; }
+  .batch-type-btn { flex: 1; justify-content: center; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🔔 NOTIFICATION PANEL — Mobile
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .notif-panel {
+    width: 100% !important;
+    right: -100% !important;
+    border-radius: 0;
+  }
+  .notif-panel.open { right: 0 !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🔲 SIDEBAR — Mobile overlay
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar {
+    width: min(88vw, 290px);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.16) !important;
+  }
+  .sidebar-nav { padding: 8px 8px; }
+  .nav-item {
+    padding: 10px 12px;
+    font-size: 14px;
+    min-height: 44px;
+    border-radius: 10px;
+  }
+  .nav-section-title { font-size: 10px; padding: 10px 10px 4px; }
+  .conveyor-status-bar { font-size: 11px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   🎨 UTILITY — Mobile friendly buttons
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .btn { min-height: 38px; }
+  .btn-sm { min-height: 34px; font-size: 12px; }
+  
+  /* Action buttons in tables */
+  .action-btns { flex-wrap: nowrap; }
+  .action-btn { width: 34px; height: 34px; font-size: 13px; }
+  
+  /* Page gap */
+  .page-content { gap: 12px !important; }
+  
+  /* Top withdraw compact on mobile */
+  .tw-bar-track { display: none; }
+  .tw-item { padding: 6px 0; }
+  .tw-name { font-size: 12.5px; }
+  .tw-qty strong { font-size: 13px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   ✨ RFID SCAN POPUP — Mobile compact
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .rfid-scan-popup { width: 90vw; left: 5vw; transform: translateX(0) translateY(-100%); }
+  .rfid-scan-popup.show { transform: translateX(0) translateY(0); }
+  .rfid-scan-popup-inner { padding: 10px 14px; gap: 10px; border-radius: 0 0 12px 12px; }
+  .rfid-scan-popup-uid { font-size: 12px; }
+  .rfid-scan-popup-product { font-size: 11px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   💡 MISC IMPROVEMENTS
+══════════════════════════════════════════════════════ */
+/* Smooth scrolling in panels */
+.panel-body, .live-feed-body, .sidebar-nav {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Active state for list items */
+@media (max-width: 768px) {
+  .activity-item:active,
+  .nav-item:active,
+  .mbn-item:active {
+    background: var(--accent-soft) !important;
+    opacity: 0.85;
+  }
+  
+  /* Disable hover animations on touch */
+  .stat-card:hover,
+  .history-summary-card:hover,
+  .an2-kpi:hover {
+    transform: none !important;
+  }
+  
+  /* Live feed shorter on mobile */
+  .live-feed-body { max-height: 220px; }
+  
+  /* Dashboard two col → single */
+  .dashboard-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-bottom: 12px;
+  }
+  
+  /* Content grid */
+  .content-grid { grid-template-columns: 1fr !important; }
+  
+  /* Page title area */
+  .topbar-left > div > h1 { font-size: 15px; }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   🔧 MOBILE STABILITY FIXES v2
+══════════════════════════════════════════════════════ */
+
+/* main-content must be scrollable for scrollTo() to work */
+.main-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
+  position: relative;
+}
+
+/* Sidebar overlay — dark backdrop when sidebar is open on mobile */
+#sidebarOverlay {
   display: none;
   position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 20000;
-  background: linear-gradient(90deg, #DC2626, #EF4444);
-  color: #fff;
-  padding: 9px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  box-shadow: 0 2px 12px rgba(239,68,68,.35);
-  animation: offlinePulse 2s ease-in-out infinite;
+  inset: 0;
+  z-index: 199; /* just below sidebar z-index:200 */
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: sidebarOverlayIn .25s ease;
 }
-@keyframes offlinePulse {
-  0%,100% { background: linear-gradient(90deg,#DC2626,#EF4444); }
-  50%      { background: linear-gradient(90deg,#B91C1C,#DC2626); }
+@keyframes sidebarOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
+@media (max-width: 768px) {
+  #sidebarOverlay.active { display: block; }
+}
+
+/* Prevent body scroll when sidebar is open */
+body.sidebar-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Sidebar slide-in animation refinement */
+@media (max-width: 768px) {
+  .sidebar {
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+    will-change: transform;
+  }
+}
+
+/* ── Input font-size 16px on mobile (prevent iOS auto-zoom) ── */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* But keep small text in non-editable contexts */
+  .data-table td, .data-table th,
+  .activity-details, .feed-entry,
+  .badge-status, .role-badge,
+  .filter-chip, .badge {
+    font-size: inherit !important;
+  }
+}
+
+/* ── Scroll smoothness on iOS ── */
+.main-content,
+.panel-body,
+.live-feed-body,
+.sidebar-nav,
+.modal-body,
+.notif-list {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Active press state for all tappable items ── */
+@media (max-width: 768px) {
+  .btn:active,
+  .nav-item:active,
+  .mbn-item:active,
+  .filter-chip:active,
+  .demo-badge:active,
+  .activity-item:active {
+    opacity: 0.75;
+    transform: scale(0.97);
+  }
+  .btn:active {
+    transform: scale(0.97) translateY(0) !important;
+  }
+}
+
+/* ── Loading spinner in buttons ── */
+@keyframes fa-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.fa-spin { animation: fa-spin .8s linear infinite; }
+
+/* ── Disabled button states ── */
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Smooth page transitions ── */
+.page-content.page-view.active {
+  animation: pageFadeIn .2s ease;
+}
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Prevent horizontal overflow on all screens ── */
+body { overflow-x: hidden; }
+.page-content { overflow-x: hidden; }
