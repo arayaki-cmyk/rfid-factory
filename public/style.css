@@ -817,9 +817,13 @@ tr:hover td {
    📊 KPI FULLSCREEN — Redesigned
 ══════════════════════════════════════════════════════════════ */
 .kpi-fullscreen{
-  position:fixed;inset:0;background:#070b14;z-index:10100;
+  position:fixed;inset:0;background:#070b14;
+  /* Must be above mobile-bottom-nav (5000), notif-panel (1200), modal (1000) */
+  z-index:30000;
   display:flex;flex-direction:column;
   font-family:'Segoe UI',sans-serif;
+  /* Ensure it captures all touch/click events */
+  pointer-events:all;
 }
 
 /* Top bar */
@@ -828,19 +832,32 @@ tr:hover td {
   padding:14px 28px;flex-shrink:0;
   border-bottom:1px solid rgba(255,255,255,.07);
   background:rgba(255,255,255,.03);
-  position:relative;z-index:10300;
+  position:relative;z-index:30100;
+  /* Ensure topbar itself is always clickable */
+  pointer-events:all;
 }
 .kpi-fs-logo{font-size:18px;font-weight:800;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:10px;letter-spacing:.5px;}
 .kpi-fs-logo i{color:#00d4ff;font-size:20px;}
 .kpi-fs-clock{font-size:32px;font-weight:900;color:#fff;font-family:monospace;letter-spacing:6px;text-shadow:0 0 20px rgba(0,212,255,.4);}
 .kpi-fs-exitbtn{
   background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
-  color:rgba(255,255,255,.8);padding:9px 20px;border-radius:10px;cursor:pointer;
+  color:rgba(255,255,255,.8);
+  /* Bigger tap target for mobile */
+  padding:12px 24px;
+  border-radius:10px;cursor:pointer;
   font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;
-  transition:all .2s;position:relative;z-index:10400;pointer-events:all;
-  backdrop-filter:blur(8px);
+  transition:all .2s;
+  position:relative;z-index:30200;
+  pointer-events:all;
+  /* Remove backdrop-filter — can cause click issues on some browsers */
+  -webkit-tap-highlight-color: rgba(255,255,255,0.2);
+  touch-action: manipulation;
+  min-height: 48px;
+  min-width: 120px;
+  justify-content: center;
 }
 .kpi-fs-exitbtn:hover{background:rgba(255,255,255,.18);color:#fff;transform:scale(1.04);}
+.kpi-fs-exitbtn:active{background:rgba(255,255,255,.28);transform:scale(0.97);}
 
 /* KPI Grid */
 .kpi-fs-grid{
@@ -1138,4 +1155,28 @@ tr.row-warn td{background:rgba(239,68,68,.05);color:#EF4444;}
 @keyframes offlinePulse {
   0%,100% { background: linear-gradient(90deg,#DC2626,#EF4444); }
   50%      { background: linear-gradient(90deg,#B91C1C,#DC2626); }
+}
+
+/* ── KPI Fullscreen mobile fixes ─────────────────────── */
+@media (max-width: 768px) {
+  .kpi-fs-topbar { padding: 10px 14px; }
+  .kpi-fs-clock  { font-size: 22px; letter-spacing: 3px; }
+  .kpi-fs-logo   { font-size: 14px; }
+  .kpi-fs-exitbtn {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-height: 48px;
+    min-width: 100px;
+  }
+  .kpi-fs-grid {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: repeat(3, 1fr) !important;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .kpi-fs-val { font-size: clamp(24px,7vw,48px) !important; }
+  .kpi-fs-lbl { font-size: 10px !important; }
+  .kpi-fs-icon { font-size: 18px !important; }
+  .kpi-last .kpi-fs-val { font-size: clamp(12px,3.5vw,20px) !important; }
+  .kpi-fs-ticker-wrap { height: 36px; }
 }
