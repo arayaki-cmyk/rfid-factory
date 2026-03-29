@@ -511,7 +511,9 @@ function toggleSidebar() { document.getElementById('sidebar').classList.toggle('
 // ==========================================
 function initRfidReader() {
   document.addEventListener('keydown', handleRfidKey);
-  document.addEventListener('click', refocusRfid);
+  // Use mousedown (not click) so button onclick fires BEFORE refocus
+  document.addEventListener('mousedown', refocusRfid);
+  document.addEventListener('touchend', refocusRfid);
 
   updateReaderStatus(false);
   readerCheckInterval = setInterval(() => {
@@ -521,10 +523,18 @@ function initRfidReader() {
   }, 5000);
 }
 
-function refocusRfid() {
+function refocusRfid(e) {
   // Don't steal focus when KPI fullscreen is open
   const fs = document.getElementById('kpiFullscreen');
   if (fs && fs.style.display === 'flex') return;
+
+  // Don't steal focus if the user clicked a button, link, or interactive element
+  const target = e?.target;
+  if (target) {
+    const tag = target.tagName;
+    if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (target.closest('button, a, input, select, textarea, [onclick]')) return;
+  }
 
   const inp = document.getElementById('rfidHiddenInput');
   const active = document.activeElement;
