@@ -522,6 +522,10 @@ function initRfidReader() {
 }
 
 function refocusRfid() {
+  // Don't steal focus when KPI fullscreen is open
+  const fs = document.getElementById('kpiFullscreen');
+  if (fs && fs.style.display === 'flex') return;
+
   const inp = document.getElementById('rfidHiddenInput');
   const active = document.activeElement;
   if (active && active.id !== 'rfidHiddenInput' && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) return;
@@ -1623,6 +1627,14 @@ function toggleFullscreen() {
   el.style.display = 'flex';
   if (btn) btn.innerHTML = '<i class="fas fa-compress"></i>';
 
+  // Hide mobile bottom nav so it doesn't overlap the exit button
+  const mbn = document.getElementById('mobileBottomNav');
+  if (mbn) mbn.style.display = 'none';
+
+  // Blur rfidHiddenInput so it doesn't steal click events
+  const rfidInp = document.getElementById('rfidHiddenInput');
+  if (rfidInp) rfidInp.blur();
+
   // Initial render
   renderKpiFullscreen();
   updateKpiFsClock();
@@ -1637,13 +1649,6 @@ function toggleFullscreen() {
   window._kpiDataInterval = setInterval(() => { renderKpiFullscreen(); }, 15000);
 }
 
-function updateKpiFsClock() {
-  const clk = document.getElementById('kpiFsClock');
-  if (!clk) return;
-  const n = new Date();
-  clk.textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
-}
-
 function exitFullscreen() {
   const el = document.getElementById('kpiFullscreen');
   const btn = document.getElementById('fullscreenBtn');
@@ -1651,6 +1656,17 @@ function exitFullscreen() {
   if (btn) btn.innerHTML = '<i class="fas fa-expand"></i>';
   if (kpiClockInterval) { clearInterval(kpiClockInterval); kpiClockInterval = null; }
   if (window._kpiDataInterval) { clearInterval(window._kpiDataInterval); window._kpiDataInterval = null; }
+
+  // Restore mobile bottom nav
+  const mbn = document.getElementById('mobileBottomNav');
+  if (mbn) mbn.style.display = '';
+}
+
+function updateKpiFsClock() {
+  const clk = document.getElementById('kpiFsClock');
+  if (!clk) return;
+  const n = new Date();
+  clk.textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
 }
 
 // Escape key exits fullscreen
