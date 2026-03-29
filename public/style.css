@@ -931,3 +931,211 @@ tr.row-warn td{background:rgba(239,68,68,.05);color:#EF4444;}
 .kpi-ticker-item{display:inline-block;padding:0 8px;}
 .kpi-ticker-item.out{color:rgba(248,113,113,.8);}
 .kpi-ticker-item.in{color:rgba(74,222,128,.8);}
+
+/* ══════════════════════════════════════════════════════════════
+   📱 MOBILE BOTTOM NAV
+══════════════════════════════════════════════════════════════ */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 5000;
+  background: #fff;
+  border-top: 1.5px solid var(--border);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.10);
+  padding: 4px 0 env(safe-area-inset-bottom, 4px);
+  justify-content: space-around;
+  align-items: center;
+}
+.mbn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--txt3);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: 12px;
+  transition: color .15s, background .15s;
+  font-family: var(--font-main);
+  min-height: 54px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mbn-item i {
+  font-size: 19px;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), color .15s;
+}
+.mbn-item.active {
+  color: var(--accent);
+}
+.mbn-item.active i {
+  transform: scale(1.18) translateY(-1px);
+}
+.mbn-item:active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   📱 MOBILE RESPONSIVE IMPROVEMENTS
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Show bottom nav */
+  .mobile-bottom-nav { display: flex; }
+
+  /* Push page content above bottom nav */
+  .main-content { padding-bottom: 70px !important; }
+
+  /* Hide desktop search in topbar (already have page-level search) */
+  .topbar .search-box { display: none; }
+
+  /* Topbar compact */
+  .topbar { padding: 0 12px; height: 56px; }
+  .topbar h1 { font-size: 15px; }
+  .topbar .breadcrumb { display: none; }
+  .topbar-right { gap: 6px; }
+
+  /* Page content padding */
+  .page-content { padding: 12px !important; }
+
+  /* Stats grid: 2x2 on mobile */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  .stat-card { padding: 14px 14px !important; }
+  .stat-card .value { font-size: 24px !important; }
+  .stat-card .label { font-size: 11px !important; }
+
+  /* Dashboard two-col → single col */
+  .dashboard-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Conveyor belt compact on mobile */
+  .conveyor-monitor { padding: 12px !important; }
+  .conveyor-belt-area { height: 60px !important; }
+  .conveyor-stats { flex-wrap: wrap; gap: 8px !important; }
+  .conveyor-stat { font-size: 12px !important; }
+
+  /* Live feed shorter */
+  .live-feed-body { max-height: 200px !important; }
+
+  /* Withdraw/Receive: single column */
+  #withdrawView > div,
+  #receiveView > div.content-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Scanner ring smaller on mobile */
+  .scanner-ring { width: 80px !important; height: 80px !important; font-size: 28px !important; }
+
+  /* Tables: horizontal scroll */
+  .panel-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 480px; }
+
+  /* Products table: hide less critical columns */
+  .data-table th:nth-child(4),
+  .data-table td:nth-child(4) { display: none; } /* hide location col */
+
+  /* Shift KPI 2-col */
+  .shift-kpi-row { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+
+  /* Analytics grid single col */
+  .an2-grid-2 { grid-template-columns: 1fr !important; }
+  .an2-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* Heatmap: 12 cols instead of 24 */
+  .an2-heatmap { grid-template-columns: repeat(12, 1fr) !important; }
+
+  /* Modal full-screen on mobile */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: var(--radius) var(--radius) 0 0 !important;
+    animation: modalSlideUp .3s cubic-bezier(.34,1.1,.64,1) !important;
+  }
+  @keyframes modalSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* Toast: bottom of screen above nav */
+  .toast-container {
+    top: auto !important;
+    bottom: 76px !important;
+    right: 10px !important;
+    left: 10px !important;
+  }
+  .toast { min-width: unset !important; width: 100%; font-size: 13px; }
+
+  /* Sidebar overlay (already slide-in, just make it full-width) */
+  .sidebar { width: 88vw; max-width: 300px; }
+
+  /* History filter bar stacked */
+  .date-range-bar { flex-direction: column !important; gap: 8px !important; }
+  .history-search { max-width: 100% !important; width: 100% !important; }
+  .history-summary-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+
+  /* Filter chips scrollable */
+  .filter-bar { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 4px; }
+  .filter-chips { flex-wrap: nowrap; overflow-x: auto; }
+
+  /* Notification panel full width */
+  .notif-panel { width: 100% !important; right: -100% !important; }
+  .notif-panel.open { right: 0 !important; }
+
+  /* Batch scan compact */
+  #batchScanView .panel-body { overflow-x: auto; }
+
+  /* Insights grid single col */
+  .an2-insights-grid { grid-template-columns: 1fr !important; }
+
+  /* Buttons full width in forms */
+  .modal-footer { gap: 8px; }
+  .modal-footer .btn { flex: 1; justify-content: center; }
+
+  /* Top withdraw compact */
+  .tw-bar-track { display: none; }
+}
+
+/* Extra small: < 400px */
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr 1fr !important; }
+  .stat-card .value { font-size: 20px !important; }
+  .history-summary-grid { grid-template-columns: 1fr !important; }
+  .an2-kpi-grid { grid-template-columns: 1fr !important; }
+  .mbn-item span { font-size: 9px; }
+}
+
+/* ── Offline banner adjustments ─────────────────────── */
+#offlineBanner {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 20000;
+  background: linear-gradient(90deg, #DC2626, #EF4444);
+  color: #fff;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 12px rgba(239,68,68,.35);
+  animation: offlinePulse 2s ease-in-out infinite;
+}
+@keyframes offlinePulse {
+  0%,100% { background: linear-gradient(90deg,#DC2626,#EF4444); }
+  50%      { background: linear-gradient(90deg,#B91C1C,#DC2626); }
+}
