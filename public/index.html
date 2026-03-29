@@ -789,12 +789,13 @@
 
   <!-- ===== KPI FULLSCREEN ===== -->
   <div class="kpi-fullscreen" id="kpiFullscreen" style="display:none;">
+    <!-- Exit button: absolute positioned, always on top, never covered -->
+    <button onclick="exitFullscreen()" style="position:absolute;top:20px;right:24px;z-index:10500;cursor:pointer;pointer-events:all;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px);">
+      <i class="fas fa-compress"></i> ออก (ESC)
+    </button>
     <div class="kpi-fs-header">
       <div class="kpi-fs-logo"><i class="fas fa-conveyor-belt"></i> RFID Factory</div>
       <div class="kpi-fs-clock" id="kpiFsClock"></div>
-      <button onclick="exitFullscreen()" class="kpi-fs-exit" style="position:relative;z-index:10200;cursor:pointer;pointer-events:all;">
-        <i class="fas fa-compress"></i> ออก (ESC)
-      </button>
     </div>
     <div class="kpi-fs-grid" id="kpiFsGrid"></div>
     <div class="kpi-fs-ticker" id="kpiFsTicker"></div>
