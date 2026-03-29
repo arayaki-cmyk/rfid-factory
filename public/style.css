@@ -993,3 +993,54 @@ tr.row-warn td{background:rgba(239,68,68,.05);color:#EF4444;}
   .kpi-fs-grid { grid-template-columns: 1fr !important; }
   .topbar-left h1 { font-size: 14px; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   📱 KPI FULLSCREEN — Mobile Enhancement
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .kpi-fullscreen {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  /* Header: logo hide, clock smaller, exit button compact */
+  .kpi-fs-header { gap: 8px; }
+  .kpi-fs-logo { font-size: 14px; gap: 6px; }
+  .kpi-fs-logo span { display: none; } /* Hide text "RFID Factory", keep icon */
+  .kpi-fs-clock { font-size: 22px; letter-spacing: 2px; }
+
+  /* Exit button: icon-only on mobile */
+  .kpi-fs-exit { padding: 8px 12px; font-size: 12px; }
+
+  /* Grid: 2x3 on mobile (2 columns, 3 rows) */
+  .kpi-fs-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  /* Cards: smaller, tighter */
+  .kpi-fs-card {
+    padding: 16px 12px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+  .kpi-fs-icon { font-size: 20px; }
+  .kpi-fs-val { font-size: 32px; }
+  .kpi-fs-lbl { font-size: 10px; letter-spacing: 0.5px; }
+
+  /* Ticker: smaller text */
+  .kpi-fs-ticker {
+    padding: 8px 14px;
+    font-size: 11px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpi-fullscreen { padding: 12px 10px; gap: 10px; }
+  .kpi-fs-clock { font-size: 18px; letter-spacing: 1px; }
+  .kpi-fs-val { font-size: 26px; }
+  .kpi-fs-card { padding: 12px 8px; gap: 4px; }
+  .kpi-fs-icon { font-size: 16px; }
+  .kpi-fs-lbl { font-size: 9px; }
+}
