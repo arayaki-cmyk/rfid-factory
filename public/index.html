@@ -27,6 +27,12 @@
   </div>
   <div class="particles" id="particles"></div>
 
+  <!-- Offline Banner -->
+  <div id="offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:20000;background:linear-gradient(90deg,#DC2626,#EF4444);color:#fff;padding:9px 16px;font-size:13px;font-weight:700;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(239,68,68,.35);">
+    <i class="fas fa-wifi-slash"></i>
+    <span>ขาดการเชื่อมต่อ — กำลังพยายามเชื่อมต่อใหม่...</span>
+  </div>
+
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -915,6 +921,30 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== MOBILE BOTTOM NAV ===== -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="mbn-item active" data-page="dashboard" onclick="navigateTo('dashboard');mbnSetActive(this)">
+      <i class="fas fa-th-large"></i>
+      <span>หน้าหลัก</span>
+    </button>
+    <button class="mbn-item" data-page="withdraw" onclick="navigateTo('withdraw');mbnSetActive(this)">
+      <i class="fas fa-arrow-right-from-bracket"></i>
+      <span>เบิก</span>
+    </button>
+    <button class="mbn-item" data-page="receive" onclick="navigateTo('receive');mbnSetActive(this)">
+      <i class="fas fa-arrow-right-to-bracket"></i>
+      <span>รับเข้า</span>
+    </button>
+    <button class="mbn-item" data-page="transactions" onclick="navigateTo('transactions');mbnSetActive(this)">
+      <i class="fas fa-clock-rotate-left"></i>
+      <span>ประวัติ</span>
+    </button>
+    <button class="mbn-item" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+      <span>เมนู</span>
+    </button>
+  </nav>
 
   <script src="app.js"></script>
 </body>
