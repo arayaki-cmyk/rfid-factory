@@ -444,8 +444,20 @@ function navigateTo(page) {
   refocusRfid();
   // Close mobile sidebar if open
   document.getElementById('sidebar').classList.remove('open');
+  const _ov = document.getElementById('sidebarOverlay');
+  if (_ov) _ov.classList.remove('open');
 }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('open', sidebar.classList.contains('open'));
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
 
 // ==========================================
 // USB RFID READER — REAL DEVICE DETECTION
@@ -1559,30 +1571,19 @@ function toggleFullscreen() {
   const el = document.getElementById('kpiFullscreen');
   const btn = document.getElementById('fullscreenBtn');
   if (!el) return;
-  if (el.style.display === 'flex') { exitFullscreen(); return; }
-
-  el.style.display = 'flex';
-  if (btn) btn.innerHTML = '<i class="fas fa-compress"></i>';
-
-  // Initial render
-  renderKpiFullscreen();
-  updateKpiFsClock();
-
-  // Clock updates every second
-  kpiClockInterval = setInterval(() => {
-    updateKpiFsClock();
-  }, 1000);
-
-  // Data refresh every 15 seconds
-  if (window._kpiDataInterval) clearInterval(window._kpiDataInterval);
-  window._kpiDataInterval = setInterval(() => { renderKpiFullscreen(); }, 15000);
-}
-
-function updateKpiFsClock() {
-  const clk = document.getElementById('kpiFsClock');
-  if (!clk) return;
-  const n = new Date();
-  clk.textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+  const isShowing = el.style.display === 'flex';
+  if (isShowing) {
+    exitFullscreen();
+  } else {
+    el.style.display = 'flex';
+    btn.innerHTML = '<i class="fas fa-compress"></i>';
+    renderKpiFullscreen();
+    kpiClockInterval = setInterval(() => {
+      const clk = document.getElementById('kpiFsClock');
+      if (clk) { const n = new Date(); clk.textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`; }
+      renderKpiFullscreen();
+    }, 5000);
+  }
 }
 
 function exitFullscreen() {
@@ -1591,7 +1592,6 @@ function exitFullscreen() {
   if (el) el.style.display = 'none';
   if (btn) btn.innerHTML = '<i class="fas fa-expand"></i>';
   if (kpiClockInterval) { clearInterval(kpiClockInterval); kpiClockInterval = null; }
-  if (window._kpiDataInterval) { clearInterval(window._kpiDataInterval); window._kpiDataInterval = null; }
 }
 
 // Escape key exits fullscreen
@@ -1608,52 +1608,24 @@ function renderKpiFullscreen() {
   if (!grid) return;
 
   const today = getNow().slice(0, 10);
-  const todayOut   = transactions.filter(t => t.type === 'out' && t.time?.startsWith(today)).reduce((s,t) => s + t.qty, 0);
-  const todayIn    = transactions.filter(t => t.type === 'in'  && t.time?.startsWith(today)).reduce((s,t) => s + t.qty, 0);
-  const totalStock = products.reduce((s,p) => s + p.quantity, 0);
-  const lowCount   = products.filter(p => p.quantity <= p.minStock && p.minStock > 0).length;
-  const totalTx    = transactions.filter(t => t.time?.startsWith(today)).length;
-  const lastTx     = transactions[0];
+  const todayOut = transactions.filter(t => t.type === 'out' && t.time?.startsWith(today)).reduce((s,t)=>s+t.qty,0);
+  const todayIn  = transactions.filter(t => t.type === 'in'  && t.time?.startsWith(today)).reduce((s,t)=>s+t.qty,0);
+  const totalStock = products.reduce((s,p)=>s+p.quantity,0);
+  const lowCount = products.filter(p=>p.quantity<=p.minStock&&p.minStock>0).length;
+  const totalTx = transactions.filter(t=>t.time?.startsWith(today)).length;
+  const lastTx = transactions[0];
 
   grid.innerHTML = `
-    <div class="kpi-fs-card kpi-out">
-      <div class="kpi-fs-icon"><i class="fas fa-arrow-right-from-bracket"></i></div>
-      <div class="kpi-fs-val">${todayOut.toLocaleString()}</div>
-      <div class="kpi-fs-lbl">เบิกออกวันนี้</div>
-    </div>
-    <div class="kpi-fs-card kpi-in">
-      <div class="kpi-fs-icon"><i class="fas fa-arrow-right-to-bracket"></i></div>
-      <div class="kpi-fs-val">${todayIn.toLocaleString()}</div>
-      <div class="kpi-fs-lbl">รับเข้าวันนี้</div>
-    </div>
-    <div class="kpi-fs-card kpi-stock">
-      <div class="kpi-fs-icon"><i class="fas fa-boxes-stacked"></i></div>
-      <div class="kpi-fs-val">${totalStock.toLocaleString()}</div>
-      <div class="kpi-fs-lbl">สต็อกรวม</div>
-    </div>
-    <div class="kpi-fs-card ${lowCount > 0 ? 'kpi-alert' : 'kpi-ok'}">
-      <div class="kpi-fs-icon"><i class="fas fa-triangle-exclamation"></i></div>
-      <div class="kpi-fs-val">${lowCount}</div>
-      <div class="kpi-fs-lbl">สินค้าใกล้หมด</div>
-    </div>
-    <div class="kpi-fs-card kpi-tx">
-      <div class="kpi-fs-icon"><i class="fas fa-receipt"></i></div>
-      <div class="kpi-fs-val">${totalTx}</div>
-      <div class="kpi-fs-lbl">รายการวันนี้</div>
-    </div>
-    <div class="kpi-fs-card kpi-last">
-      <div class="kpi-fs-icon"><i class="fas fa-satellite-dish"></i></div>
-      <div class="kpi-fs-val">${lastTx ? escapeHtml(lastTx.product || lastTx.rfid || '—') : '—'}</div>
-      <div class="kpi-fs-lbl">สแกนล่าสุด · ${lastTx ? fmtTime(lastTx.time) : '—'}</div>
-    </div>`;
+    <div class="kpi-fs-card kpi-out"><div class="kpi-fs-icon"><i class="fas fa-arrow-right-from-bracket"></i></div><div class="kpi-fs-val">${todayOut.toLocaleString()}</div><div class="kpi-fs-lbl">เบิกออกวันนี้</div></div>
+    <div class="kpi-fs-card kpi-in"><div class="kpi-fs-icon"><i class="fas fa-arrow-right-to-bracket"></i></div><div class="kpi-fs-val">${todayIn.toLocaleString()}</div><div class="kpi-fs-lbl">รับเข้าวันนี้</div></div>
+    <div class="kpi-fs-card kpi-stock"><div class="kpi-fs-icon"><i class="fas fa-boxes-stacked"></i></div><div class="kpi-fs-val">${totalStock.toLocaleString()}</div><div class="kpi-fs-lbl">สต็อกรวม</div></div>
+    <div class="kpi-fs-card ${lowCount>0?'kpi-alert':'kpi-ok'}"><div class="kpi-fs-icon"><i class="fas fa-triangle-exclamation"></i></div><div class="kpi-fs-val">${lowCount}</div><div class="kpi-fs-lbl">สินค้าใกล้หมด</div></div>
+    <div class="kpi-fs-card kpi-tx"><div class="kpi-fs-icon"><i class="fas fa-receipt"></i></div><div class="kpi-fs-val">${totalTx}</div><div class="kpi-fs-lbl">รายการวันนี้</div></div>
+    <div class="kpi-fs-card kpi-last"><div class="kpi-fs-icon"><i class="fas fa-satellite-dish"></i></div><div class="kpi-fs-val" style="font-size:18px;">${lastTx ? escapeHtml(lastTx.product||lastTx.rfid||'-') : '—'}</div><div class="kpi-fs-lbl">สแกนล่าสุด</div></div>`;
 
-  // Ticker: duplicate content for seamless loop
   if (ticker) {
-    const items = transactions.slice(0, 20).map(t =>
-      `<span class="kpi-ticker-item ${t.type}">${t.type==='out' ? '🔴' : '🟢'} ${escapeHtml(t.product||t.rfid||'-')} ×${t.qty}　</span>`
-    ).join('');
-    // Duplicate for seamless infinite scroll
-    ticker.innerHTML = items + items;
+    const recentNames = transactions.slice(0, 10).map(t => `${t.type==='out'?'🔴 เบิก':'🟢 รับ'} ${t.product||t.rfid||'-'} × ${t.qty}`).join('　　　');
+    ticker.textContent = recentNames || 'รอข้อมูล...';
   }
 }
 
