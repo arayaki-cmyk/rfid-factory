@@ -7,13 +7,63 @@ const DB = {
   session: 'rfid_session', theme: 'rfid_theme'
 };
 
+// ─── Network / Connectivity State ─────────────────────────
+let _isOnline = true;
+let _pingInterval = null;
+let _reconnectAttempts = 0;
+
+function setOnlineState(online) {
+  if (_isOnline === online) return;
+  _isOnline = online;
+  const bar = document.getElementById('offlineBanner');
+  if (bar) bar.style.display = online ? 'none' : 'flex';
+  if (online) {
+    _reconnectAttempts = 0;
+    showToast('success', '✅ เชื่อมต่อเซิร์ฟเวอร์แล้ว — กำลังโหลดข้อมูลใหม่');
+    loadData(true).then(() => syncAllViews());
+  } else {
+    _reconnectAttempts++;
+    console.warn(`Offline detected (attempt ${_reconnectAttempts})`);
+  }
+}
+
+function startPing() {
+  if (_pingInterval) clearInterval(_pingInterval);
+  _pingInterval = setInterval(async () => {
+    try {
+      const r = await fetch('/api/ping', { method: 'GET', signal: AbortSignal.timeout(4000) });
+      setOnlineState(r.ok);
+    } catch { setOnlineState(false); }
+  }, 8000); // ping every 8s
+}
+
 // API helper — communicates with Express backend
-async function api(method, path, body) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+async function api(method, path, body, retries = 2) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(12000), // 12s timeout
+  };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch('/api' + path, opts);
-  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'API Error'); }
-  return res.json();
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch('/api' + path, opts);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      setOnlineState(true);
+      return await res.json();
+    } catch (e) {
+      const isNet = e.name === 'AbortError' || e.name === 'TypeError' || e.message.includes('fetch');
+      if (isNet) setOnlineState(false);
+      if (attempt < retries && (e.message.includes('429') || e.message.includes('503') || isNet)) {
+        await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+        continue;
+      }
+      throw e;
+    }
+  }
 }
 
 const DEFAULT_USERS = [
@@ -125,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initRfidReader();
   createParticles();
   applyStaticTranslations();
+  startPing(); // network health monitoring
 });
 
 // ===== THEME =====
@@ -345,6 +396,12 @@ function applyRoles() {
     el.style.display = allowed.includes(page) ? '' : 'none';
   });
 
+  // Sync mobile bottom nav visibility with permissions
+  document.querySelectorAll('.mbn-item[data-page]').forEach(el => {
+    const page = el.dataset.page;
+    el.style.display = allowed.includes(page) ? '' : 'none';
+  });
+
   // Admin-only nav section (user management)
   const adminSection = document.getElementById('adminSection');
   if (adminSection) adminSection.style.display = can('users', 'view') ? '' : 'none';
@@ -370,6 +427,7 @@ function applyRoles() {
 function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(async () => {
+    if (!_isOnline) return; // skip if offline
     await loadData(true); // silent refresh — no error toast
     // Always refresh dashboard widgets regardless of current page
     renderStats();
@@ -392,7 +450,7 @@ function startAutoRefresh() {
     } else {
       refreshCurrentView();
     }
-  }, 30000); // every 30 seconds
+  }, 15000); // every 15 seconds — faster sync
 }
 
 // ===== NAV =====
@@ -442,6 +500,7 @@ function navigateTo(page) {
   updateTxBadge();
   updateTodayStats();
   refocusRfid();
+  syncMobileNav(page);
   // Close mobile sidebar if open
   document.getElementById('sidebar').classList.remove('open');
 }
@@ -2337,6 +2396,18 @@ function renderAnalyticsInsights() {
     </div>`).join('')}</div>`;
 }
 
+
+// ===== MOBILE BOTTOM NAV =====
+function mbnSetActive(el) {
+  document.querySelectorAll('.mbn-item[data-page]').forEach(b => b.classList.remove('active'));
+  if (el && el.dataset.page) el.classList.add('active');
+}
+// Sync bottom nav state whenever navigateTo fires
+function syncMobileNav(page) {
+  document.querySelectorAll('.mbn-item[data-page]').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+}
 
 // ===== UTILS =====
 function getNow() { const d = new Date(); return `${d.getFullYear()}-${S(d.getMonth() + 1)}-${S(d.getDate())} ${S(d.getHours())}:${S(d.getMinutes())}:${S(d.getSeconds())}`; }
