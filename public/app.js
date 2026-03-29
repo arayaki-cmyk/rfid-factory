@@ -1828,6 +1828,9 @@ async function updatePOStatus(id, status) {
   if (!confirm(`ยืนยันเปลี่ยนสถานะเป็น "${PO_STATUS[status]?.label || status}"?`)) return;
   try {
     const result = await api('PATCH', `/po/${id}/status`, { status });
+    if (result.items && typeof result.items === 'string') {
+      try { result.items = JSON.parse(result.items); } catch { result.items = []; }
+    }
     const idx = poList.findIndex(p => p.id == id);
     if (idx >= 0) poList[idx] = { ...poList[idx], ...result };
     showToast('success', `อัปเดตสถานะ PO สำเร็จ`);
@@ -1838,7 +1841,7 @@ async function updatePOStatus(id, status) {
 }
 
 async function cancelPO(id) {
-  if (!confirm('ยืนยันยกเลิก PO นี้?')) return;
+  // ไม่ต้อง confirm ซ้ำ เพราะ updatePOStatus มี confirm อยู่แล้ว
   await updatePOStatus(id, 'cancelled');
 }
 
@@ -1915,12 +1918,26 @@ function viewPODetail(id) {
     </div>
     <!-- Action buttons inside detail -->
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
-      ${po.status==='pending' ? `<button class="btn btn-primary btn-sm" onclick="updatePOStatus(${po.id},'approved');closeModal('poDetailModal');"><i class="fas fa-check"></i> อนุมัติ</button>` : ''}
-      ${po.status==='approved' ? `<button class="btn btn-primary btn-sm" onclick="updatePOStatus(${po.id},'ordered');closeModal('poDetailModal');"><i class="fas fa-truck"></i> สั่งซื้อแล้ว</button>` : ''}
-      ${po.status==='ordered' ? `<button class="btn btn-primary btn-sm" onclick="receivePO(${po.id});closeModal('poDetailModal');"><i class="fas fa-box-check"></i> รับของแล้ว</button>` : ''}
-      ${po.status==='pending' ? `<button class="btn btn-danger btn-sm" onclick="cancelPO(${po.id});closeModal('poDetailModal');"><i class="fas fa-ban"></i> ยกเลิก</button>` : ''}
+      ${po.status==='pending' ? `<button class="btn btn-primary btn-sm" onclick="poDetailAction(${po.id},'approved')"><i class="fas fa-check"></i> อนุมัติ</button>` : ''}
+      ${po.status==='approved' ? `<button class="btn btn-primary btn-sm" onclick="poDetailAction(${po.id},'ordered')"><i class="fas fa-truck"></i> สั่งซื้อแล้ว</button>` : ''}
+      ${po.status==='ordered' ? `<button class="btn btn-primary btn-sm" onclick="poDetailReceive(${po.id})"><i class="fas fa-box-check"></i> รับของแล้ว</button>` : ''}
+      ${po.status==='pending' ? `<button class="btn btn-danger btn-sm" onclick="poDetailAction(${po.id},'cancelled')"><i class="fas fa-ban"></i> ยกเลิก</button>` : ''}
     </div>`;
   openModal('poDetailModal');
+}
+
+// Wrapper สำหรับปุ่มใน detail modal — รอ async เสร็จก่อนค่อยปิด modal
+async function poDetailAction(id, status) {
+  await updatePOStatus(id, status);
+  // ปิด modal เฉพาะเมื่อ updatePOStatus สำเร็จ (ไม่ถูก cancel)
+  const po = poList.find(p => p.id == id);
+  if (po && po.status === status) closeModal('poDetailModal');
+}
+
+async function poDetailReceive(id) {
+  await receivePO(id);
+  const po = poList.find(p => p.id == id);
+  if (po && po.status === 'received') closeModal('poDetailModal');
 }
 
 function printCurrentPO() {
