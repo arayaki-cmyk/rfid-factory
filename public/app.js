@@ -857,7 +857,7 @@ function renderTopWithdraw() {
   transactions.filter(t => t.type === 'out').forEach(t => {
     if (t.product) counts[t.product] = (counts[t.product] || 0) + t.qty;
   });
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   if (!sorted.length) {
     c.innerHTML = `<div class="empty-state"><i class="fas fa-chart-bar"></i><p>ยังไม่มีข้อมูลการเบิก</p><small>ข้อมูลจะแสดงหลังจากมีการเบิกสินค้า</small></div>`;
