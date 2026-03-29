@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 // Cache GET results to avoid hitting Google Sheets on every request.
 // Cache expires after 60 seconds so data stays reasonably fresh.
 const cache = {};
-const CACHE_TTL = 60 * 1000; // 60 seconds
+const CACHE_TTL = 15 * 1000; // 15 seconds — faster refresh
 
 function getCached(key) {
   const entry = cache[key];
@@ -201,6 +201,11 @@ app.post('/api/ai/analyze', async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
+});
+
+// ===== HEALTH / PING =====
+app.get('/api/ping', (req, res) => {
+    res.json({ ok: true, ts: Date.now() });
 });
 
 // ===== SPA FALLBACK =====
