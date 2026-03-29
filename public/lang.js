@@ -59,6 +59,9 @@ const LANG = {
     page_userlog_bread: { th: 'รายงาน / ประวัติ', en: 'Reports / Logs' },
     page_usermgmt: { th: 'จัดการผู้ใช้', en: 'User Management' },
     page_usermgmt_bread: { th: 'ระบบ / ผู้ใช้งาน', en: 'System / Users' },
+    nav_analytics: { th: 'สรุปภาพรวม', en: 'Analytics' },
+    nav_batch_scan: { th: 'Batch Scan', en: 'Batch Scan' },
+    nav_shift_report: { th: 'รายงานกะ', en: 'Shift Report' },
 
     // ===== DASHBOARD =====
     dash_total_products: { th: 'สินค้าทั้งหมด', en: 'Total Products' },
