@@ -1576,28 +1576,114 @@ button, [role="button"] { cursor: pointer; }
 
 
 /* ══════════════════════════════════════════════════════
-   📐 SIDEBAR-GRID-LAYOUT (replaces hardcoded inline styles)
-   Used in: withdrawView, batchScanView
+   🔧 MOBILE STABILITY FIXES v2
 ══════════════════════════════════════════════════════ */
-.sidebar-grid-layout {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 20px;
-  align-items: start;
+
+/* main-content must be scrollable for scrollTo() to work */
+.main-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
+  position: relative;
 }
 
-@media (max-width: 1100px) {
-  .sidebar-grid-layout { grid-template-columns: 300px 1fr; gap: 16px; }
+/* Sidebar overlay — dark backdrop when sidebar is open on mobile */
+#sidebarOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 199; /* just below sidebar z-index:200 */
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: sidebarOverlayIn .25s ease;
 }
-
-@media (max-width: 900px) {
-  .sidebar-grid-layout { grid-template-columns: 280px 1fr; gap: 14px; }
+@keyframes sidebarOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-
 @media (max-width: 768px) {
-  .sidebar-grid-layout {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
+  #sidebarOverlay.active { display: block; }
+}
+
+/* Prevent body scroll when sidebar is open */
+body.sidebar-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Sidebar slide-in animation refinement */
+@media (max-width: 768px) {
+  .sidebar {
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+    will-change: transform;
   }
 }
+
+/* ── Input font-size 16px on mobile (prevent iOS auto-zoom) ── */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* But keep small text in non-editable contexts */
+  .data-table td, .data-table th,
+  .activity-details, .feed-entry,
+  .badge-status, .role-badge,
+  .filter-chip, .badge {
+    font-size: inherit !important;
+  }
+}
+
+/* ── Scroll smoothness on iOS ── */
+.main-content,
+.panel-body,
+.live-feed-body,
+.sidebar-nav,
+.modal-body,
+.notif-list {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Active press state for all tappable items ── */
+@media (max-width: 768px) {
+  .btn:active,
+  .nav-item:active,
+  .mbn-item:active,
+  .filter-chip:active,
+  .demo-badge:active,
+  .activity-item:active {
+    opacity: 0.75;
+    transform: scale(0.97);
+  }
+  .btn:active {
+    transform: scale(0.97) translateY(0) !important;
+  }
+}
+
+/* ── Loading spinner in buttons ── */
+@keyframes fa-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.fa-spin { animation: fa-spin .8s linear infinite; }
+
+/* ── Disabled button states ── */
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Smooth page transitions ── */
+.page-content.page-view.active {
+  animation: pageFadeIn .2s ease;
+}
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Prevent horizontal overflow on all screens ── */
+body { overflow-x: hidden; }
+.page-content { overflow-x: hidden; }
