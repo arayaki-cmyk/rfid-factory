@@ -250,6 +250,10 @@ app.patch('/api/po/:id/status', async (req, res) => {
         const now = new Date().toISOString().slice(0,19).replace('T',' ');
         const result = await withRetry(() => poDao.updatePO(parseInt(req.params.id), { status, updatedAt: now }));
         if (!result) return res.status(404).json({ error: 'ไม่พบ PO' });
+        // Parse items เหมือน GET /po เพื่อความสม่ำเสมอ
+        if (result.items && typeof result.items === 'string') {
+            try { result.items = JSON.parse(result.items); } catch { result.items = []; }
+        }
         invalidateCache('po');
         res.json(result);
     } catch (e) { res.status(500).json({ error: e.message }); }
