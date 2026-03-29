@@ -4,7 +4,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { dao } = require('./db');
+const { dao, poDao } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -201,6 +201,66 @@ app.post('/api/ai/analyze', async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
+});
+
+
+// ===== PURCHASE ORDERS =====
+app.get('/api/po', async (req, res) => {
+    try {
+        const cached = getCached('po');
+        if (cached) return res.json(cached);
+        const list = await withRetry(() => poDao.getAllPO());
+        // Parse items JSON for each PO
+        const parsed = list.map(p => {
+            try { p.items = JSON.parse(p.items || '[]'); } catch { p.items = []; }
+            return p;
+        });
+        setCached('po', parsed);
+        res.json(parsed);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/po', async (req, res) => {
+    try {
+        const { supplier, items, note, createdBy } = req.body;
+        if (!supplier || !items?.length) return res.status(400).json({ error: 'กรุณาระบุซัพพลายเออร์และรายการสินค้า' });
+        const now = new Date().toISOString().slice(0,19).replace('T',' ');
+        const result = await withRetry(() => poDao.insertPO({
+            status: 'pending', supplier, createdAt: now, createdBy: createdBy || '',
+            updatedAt: now, items, note: note || ''
+        }));
+        invalidateCache('po');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/po/:id', async (req, res) => {
+    try {
+        const now = new Date().toISOString().slice(0,19).replace('T',' ');
+        const result = await withRetry(() => poDao.updatePO(parseInt(req.params.id), { ...req.body, updatedAt: now }));
+        if (!result) return res.status(404).json({ error: 'ไม่พบ PO' });
+        invalidateCache('po');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/po/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        const now = new Date().toISOString().slice(0,19).replace('T',' ');
+        const result = await withRetry(() => poDao.updatePO(parseInt(req.params.id), { status, updatedAt: now }));
+        if (!result) return res.status(404).json({ error: 'ไม่พบ PO' });
+        invalidateCache('po');
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/po/:id', async (req, res) => {
+    try {
+        await withRetry(() => poDao.deletePO(parseInt(req.params.id)));
+        invalidateCache('po');
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== SPA FALLBACK =====
