@@ -813,13 +813,13 @@ tr:hover td {
    📊 KPI FULLSCREEN
 ══════════════════════════════════════════════════════════════ */
 .kpi-fullscreen{position:fixed;inset:0;background:#0a0e1a;z-index:10100;display:flex;flex-direction:column;padding:24px;gap:20px;}
-.kpi-fs-header{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10200;}
+.kpi-fs-header{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10200;flex-shrink:0;isolation:isolate;}
 .kpi-fs-logo{font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;opacity:.8;}
 .kpi-fs-logo i{color:#00d4ff;}
 .kpi-fs-clock{font-size:36px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:4px;}
 .kpi-fs-exit{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;position:relative;z-index:10200;pointer-events:all;}
 .kpi-fs-exit:hover{background:rgba(255,255,255,.2);}
-.kpi-fs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;}
+.kpi-fs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;min-height:0;overflow:hidden;}
 .kpi-fs-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:all .3s;}
 .kpi-fs-icon{font-size:28px;opacity:.7;}
 .kpi-fs-val{font-size:52px;font-weight:900;color:#fff;line-height:1;}
