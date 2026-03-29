@@ -45,6 +45,7 @@ const SHEETS = {
   transactions: 'transactions',
   logs: 'logs',
   snapshots: 'snapshots',
+  po: 'po',
 };
 
 // Ensure all sheets exist with headers
@@ -59,6 +60,7 @@ async function ensureSheets() {
     transactions: ['id','type','rfid','product','sku','qty','user','time','reason'],
     logs:         ['time','user','role','action','detail'],
     snapshots:    ['date','data'],
+    po:           ['id','poNumber','status','supplier','createdAt','createdBy','updatedAt','items','note'],
   };
 
   const requests = [];
@@ -288,4 +290,40 @@ const dao = {
   },
 };
 
-module.exports = { dao, getDb: async () => ({}) };
+
+const PO_HEADERS = ['id','poNumber','status','supplier','createdAt','createdBy','updatedAt','items','note'];
+
+const poDao = {
+  async getAllPO() {
+    return (await readAll('po')).sort((a, b) => b.id - a.id);
+  },
+  async getPOById(id) {
+    const list = await readAll('po');
+    return list.find(p => p.id == id) || null;
+  },
+  async insertPO(data) {
+    const id = await nextId('po');
+    const poNumber = `PO-${new Date().getFullYear()}-${String(id).padStart(4,'0')}`;
+    const entry = { id, poNumber, ...data, items: JSON.stringify(data.items || []) };
+    await appendRow('po', PO_HEADERS, entry);
+    return { ...entry, items: data.items || [] };
+  },
+  async updatePO(id, data) {
+    const list = await readAll('po');
+    const idx = list.findIndex(p => p.id == id);
+    if (idx < 0) return null;
+    if (data.items && typeof data.items !== 'string') data.items = JSON.stringify(data.items);
+    list[idx] = { ...list[idx], ...data, id: Number(id) };
+    await writeAll('po', PO_HEADERS, list);
+    const result = { ...list[idx] };
+    try { result.items = JSON.parse(result.items); } catch { result.items = []; }
+    return result;
+  },
+  async deletePO(id) {
+    const list = await readAll('po');
+    await writeAll('po', PO_HEADERS, list.filter(p => p.id != id));
+    return true;
+  },
+};
+
+module.exports = { dao, poDao, getDb: async () => ({}) };
